@@ -1,0 +1,9 @@
+displayName: "Extra-Extra-Utilities"
+name: "eeu"
+author: "晓伟"
+main: "eeu.EEUMod"
+description: ""
+version: "0.1.0"
+minGameVersion: 145
+dependencies: ["extra-utilities"]
+java: true
