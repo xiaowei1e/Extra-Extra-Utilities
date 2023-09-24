@@ -1,0 +1,15 @@
+{
+  //only a test
+  "type": "CrispWall",
+  "name": "crisp-steel-wall",
+  "health": 480,
+  "maxHandleDamage": 384,
+  "restoreSpeed": 0.64,
+  "envDisabled": [
+    "scorching"
+  ],
+  "requirements": [
+    "crisp-steel/6"
+  ],
+  "category": "defense"
+}

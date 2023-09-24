@@ -5,9 +5,8 @@ import arc.func.Floatp;
 import arc.graphics.Color;
 import arc.math.Mathf;
 import eeu.other.stats.Stats;
-import eeu.ui.MultipleBar;
+import eeu.ui.tables.MultipleBar;
 import mindustry.graphics.Pal;
-import mindustry.ui.Bar;
 import mindustry.world.blocks.defense.Wall;
 import mindustry.world.meta.StatUnit;
 

@@ -12,15 +12,15 @@ public class EEUBlocks {
 
     public static void load() {
         int wallHealthMultiplier = 4;
-        crispWall = new CrispWall("crisp-steel-wall"){{
-           requirements(Category.defense, ItemStack.with(EUItems.crispSteel, 6));
+        /*crispWall = new CrispWall("crisp-steel-wall") {{
+            requirements(Category.defense, ItemStack.with(EUItems.crispSteel, 6));
             health = 120 * wallHealthMultiplier;
             maxHandleDamage = health * 0.8f;
             restoreSpeed = maxHandleDamage * 0.1f / 60f;
             envDisabled |= Env.scorching;
-        }};
-        crispWallLarge = new CrispWall("crisp-steel-wall-large"){{
-            requirements(Category.defense, ItemStack.mult(crispWall.requirements, 4));
+        }};*/
+        crispWallLarge = new CrispWall("crisp-steel-wall-large") {{
+            requirements(Category.defense, ItemStack.with(EUItems.crispSteel, 24));
             size = 2;
             health = 120 * wallHealthMultiplier * 4;
             maxHandleDamage = health * 0.8f;

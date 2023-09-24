@@ -1,4 +1,4 @@
-package eeu.override.ui.tables;
+package eeu.ui.tables;
 
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;

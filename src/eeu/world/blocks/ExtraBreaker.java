@@ -11,7 +11,7 @@ import arc.struct.Seq;
 import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
-import eeu.override.ui.tables.RotationButton;
+import eeu.ui.tables.RotationButton;
 import mindustry.Vars;
 import mindustry.game.Team;
 import mindustry.gen.Building;

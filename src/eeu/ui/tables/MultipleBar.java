@@ -1,4 +1,4 @@
-package eeu.ui;
+package eeu.ui.tables;
 
 import arc.Core;
 import arc.func.Floatp;

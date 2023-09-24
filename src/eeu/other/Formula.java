@@ -1,6 +1,7 @@
 package eeu.other;
 
 import arc.scene.ui.layout.Table;
+import arc.util.Nullable;
 import mindustry.content.Fx;
 import mindustry.entities.Effect;
 import mindustry.gen.Building;
@@ -14,18 +15,23 @@ import mindustry.world.meta.StatValues;
 import mindustry.world.meta.Stats;
 
 public class Formula {
-    private Consume[] input;
-    private ItemStack[] outputItems;
-    private LiquidStack[] outputLiquids;
+    @Nullable
+    public Consume[] input;
+    @Nullable
+    public ItemStack[] outputItems;
+    @Nullable
+    public LiquidStack[] outputLiquids;
     public float craftTime = 60f;
     public int[] liquidOutputDirections = {-1};
     public Effect craftEffect = Fx.none;
     public Effect updateEffect = Fx.none;
     public float updateEffectChance = 0.04f;
     public float warmupSpeed = 0.019f;
+
     public void setInput(Consume[] input) {
         this.input = input;
     }
+
     public Consume[] getInputs() {
         return input;
     }

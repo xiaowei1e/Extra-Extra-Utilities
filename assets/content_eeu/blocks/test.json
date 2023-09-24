@@ -1,0 +1,59 @@
+{
+  //only a test
+  "type": "MultipleCrafter",
+  "name": "test",
+  "size": 3,
+  "itemCapacity": 30,
+  "liquidCapacity": 30,
+  "formulas": [
+    {
+      "input": [
+        {
+          "type": "ConsumeItems",
+          "items": [
+            "copper/1"
+          ]
+        },
+        {
+          "type": "ConsumeLiquid",
+          "liquid": "cryofluid",
+          "amount": 0.1
+        },
+        {
+          "type": "ConsumePower",
+          "usage": 0.1
+        }
+      ],
+      "outputItems": [
+        "titanium/2"
+      ],
+      "outputLiquids": [
+        "water/0.05"
+      ]
+    },
+    {
+      "craftTime": 90,
+      "input": [
+        {
+          "type": "ConsumeItems",
+          "items": [
+            "copper/1"
+          ]
+        },
+        {
+          "type": "ConsumeLiquid",
+          "liquid": "oil",
+          "amount": 0.1
+        }
+      ],
+      "outputItems": [
+        "coal/6"
+      ]
+    }
+  ],
+  "requirements": [
+    "crisp-steel/100",
+    "lightnin-alloy/60"
+  ],
+  "category": "crafting"
+}
