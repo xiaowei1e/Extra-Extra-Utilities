@@ -62,7 +62,7 @@ public class JsonContentLoader {
             try {
                 //this binds the content but does not load it entirely
                 Content loaded = parser.parse(l.mod, l.file.nameWithoutExtension(), l.file.readString("UTF-8"), l.file, l.type);
-                Log.debug("[@] Loaded '@'.", l.mod.meta.name, (loaded instanceof UnlockableContent u ? u.localizedName : loaded));
+                Log.debug("[@] LoadedEEUContent '@'.", l.mod.meta.name, (loaded instanceof UnlockableContent u ? u.localizedName : loaded));
             } catch (Throwable e) {
                 if (current != content.getLastAdded() && content.getLastAdded() != null) {
                     parser.markError(content.getLastAdded(), l.mod, l.file, e);

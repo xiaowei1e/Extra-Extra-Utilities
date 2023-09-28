@@ -90,11 +90,16 @@ import static mindustry.Vars.*;
 @SuppressWarnings("unchecked")
 public class ContentParser {
     private static final boolean ignoreUnknownFields = true;
+    /**
+     * Stores things that need to be parsed fully, e.g. reading fields of content.
+     * This is done to accommodate binding of content names first.
+     */
+    private final Seq<Runnable> reads = new Seq<>();
+    private final Seq<Runnable> postreads = new Seq<>();
+    private final ObjectSet<Object> toBeParsed = new ObjectSet<>();
     ObjectMap<Class<?>, ContentType> contentTypes = new ObjectMap<>();
     ObjectSet<Class<?>> implicitNullable = ObjectSet.with(TextureRegion.class, TextureRegion[].class, TextureRegion[][].class, TextureRegion[][][].class);
     ObjectMap<String, AssetDescriptor<?>> sounds = new ObjectMap<>();
-    Seq<ParseListener> listeners = new Seq<>();
-    LoadedMod currentMod;
     ObjectMap<Class<?>, FieldParser> classParsers = new ObjectMap<>() {{
         put(Effect.class, (type, data) -> {
             if (data.isString()) {
@@ -377,24 +382,24 @@ public class ContentParser {
                 String[] split = data.asString().split("/");
                 Liquid liquid = locate(ContentType.liquid, split[0]);
                 float amount = Float.parseFloat(split[1]);
-                return new LiquidStack(liquid, amount);
+                return new ConsumeLiquid(liquid, amount);
             } else return consumeParser.parse(type, data);
         });
         put(ConsumeLiquidBase.class, consumeParser);
         put(Formula.class, (type, data) -> {
             var formula = make(Formula.class);
+            if (data.has("input")) {
+                formula.input = parseConsumes(null, data.get("input"));
+                data.remove("input");
+            }
+            Log.info(data);
             readFields(formula, data);
             return formula;
         });
     }};
+    Seq<ParseListener> listeners = new Seq<>();
+    LoadedMod currentMod;
     Content currentContent;
-    /**
-     * Stores things that need to be parsed fully, e.g. reading fields of content.
-     * This is done to accommodate binding of content names first.
-     */
-    private final Seq<Runnable> reads = new Seq<>();
-    private final Seq<Runnable> postreads = new Seq<>();
-    private final ObjectSet<Object> toBeParsed = new ObjectSet<>();
 
     private Prov<Unit> unitType(JsonValue value) {
         if (value == null) return UnitEntity::create;
@@ -420,6 +425,17 @@ public class ContentParser {
         } else {
             throw new IllegalArgumentException("You are missing a \"" + key + "\". It must be added before the file can be parsed.");
         }
+    }
+
+    private String getType(JsonValue value) {
+        return getString(value, "type");
+    }
+
+    private <T extends Content> T find(ContentType type, String name) {
+        Content c = Vars.content.getByName(type, name);
+        if (c == null) c = Vars.content.getByName(type, currentMod.name + "-" + name);
+        if (c == null) throw new IllegalArgumentException("No " + type + " found with name '" + name + "'");
+        return (T) c;
     }
 
     private final Json parser = new Json() {
@@ -506,8 +522,45 @@ public class ContentParser {
         }
     };
 
-    private String getType(JsonValue value) {
-        return getString(value, "type");
+    private <T extends Content> TypeParser<T> parser(ContentType type, Func<String, T> constructor) {
+        return (mod, name, value) -> {
+            T item;
+            Log.info(name + "fuck");
+            if (locate(type, name) != null) {
+                item = (T) locate(type, name);
+                readBundle(type, name, value);
+            } else {
+                readBundle(type, name, value);
+                item = constructor.get(mod + "-" + name);
+            }
+            currentContent = item;
+            read(() -> readFields(item, value));
+            return item;
+        };
+    }
+
+    private void readBundle(ContentType type, String name, JsonValue value) {
+        UnlockableContent cont = locate(type, name) instanceof UnlockableContent ? locate(type, name) : null;
+
+        String entryName = cont == null ? type + "." + currentMod.name + "-" + name + "." : type + "." + cont.name + ".";
+        I18NBundle bundle = Core.bundle;
+        while (bundle.getParent() != null) bundle = bundle.getParent();
+
+        if (value.has("name")) {
+            if (!Core.bundle.has(entryName + "name")) {
+                bundle.getProperties().put(entryName + "name", value.getString("name"));
+                if (cont != null) cont.localizedName = value.getString("name");
+            }
+            value.remove("name");
+        }
+
+        if (value.has("description")) {
+            if (!Core.bundle.has(entryName + "description")) {
+                bundle.getProperties().put(entryName + "description", value.getString("description"));
+                if (cont != null) cont.description = value.getString("description");
+            }
+            value.remove("description");
+        }
     }
 
     private final ObjectMap<ContentType, TypeParser<?>> parsers = ObjectMap.of(
@@ -531,41 +584,8 @@ public class ContentParser {
 
                 read(() -> {
                     if (value.has("consumes") && value.get("consumes").isObject()) {
-                        for (JsonValue child : value.get("consumes")) {
-                            switch (child.name) {
-                                case "item" -> block.consumeItem(find(ContentType.item, child.asString()));
-                                case "itemCharged" ->
-                                        block.consume((Consume) parser.readValue(ConsumeItemCharged.class, child));
-                                case "itemFlammable" ->
-                                        block.consume((Consume) parser.readValue(ConsumeItemFlammable.class, child));
-                                case "itemRadioactive" ->
-                                        block.consume((Consume) parser.readValue(ConsumeItemRadioactive.class, child));
-                                case "itemExplosive" ->
-                                        block.consume((Consume) parser.readValue(ConsumeItemExplosive.class, child));
-                                case "itemExplode" ->
-                                        block.consume((Consume) parser.readValue(ConsumeItemExplode.class, child));
-                                case "items" -> block.consume(child.isArray() ?
-                                        new ConsumeItems(parser.readValue(ItemStack[].class, child)) :
-                                        parser.readValue(ConsumeItems.class, child));
-                                case "liquidFlammable" ->
-                                        block.consume((Consume) parser.readValue(ConsumeLiquidFlammable.class, child));
-                                case "liquid" -> block.consume((Consume) parser.readValue(ConsumeLiquid.class, child));
-                                case "liquids" -> block.consume(child.isArray() ?
-                                        new ConsumeLiquids(parser.readValue(LiquidStack[].class, child)) :
-                                        parser.readValue(ConsumeLiquids.class, child));
-                                case "coolant" ->
-                                        block.consume((Consume) parser.readValue(ConsumeCoolant.class, child));
-                                case "power" -> {
-                                    if (child.isNumber()) {
-                                        block.consumePower(child.asFloat());
-                                    } else {
-                                        block.consume((Consume) parser.readValue(ConsumePower.class, child));
-                                    }
-                                }
-                                case "powerBuffered" -> block.consumePowerBuffered(child.asFloat());
-                                default ->
-                                        throw new IllegalArgumentException("Unknown consumption type: '" + child.name + "' for block '" + block.name + "'.");
-                            }
+                        for (var c : parseConsumes(block, value.get("consumes"))) {
+                            block.consume(c);
                         }
                         value.remove("consumes");
                     }
@@ -757,54 +777,6 @@ public class ContentParser {
             }
     );
 
-    private <T extends Content> T find(ContentType type, String name) {
-        Content c = Vars.content.getByName(type, name);
-        if (c == null) c = Vars.content.getByName(type, currentMod.name + "-" + name);
-        if (c == null) throw new IllegalArgumentException("No " + type + " found with name '" + name + "'");
-        return (T) c;
-    }
-
-    private <T extends Content> TypeParser<T> parser(ContentType type, Func<String, T> constructor) {
-        return (mod, name, value) -> {
-            T item;
-            Log.info(name + "fuck");
-            if (locate(type, name) != null) {
-                item = (T) locate(type, name);
-                readBundle(type, name, value);
-            } else {
-                readBundle(type, name, value);
-                item = constructor.get(mod + "-" + name);
-            }
-            currentContent = item;
-            read(() -> readFields(item, value));
-            return item;
-        };
-    }
-
-    private void readBundle(ContentType type, String name, JsonValue value) {
-        UnlockableContent cont = locate(type, name) instanceof UnlockableContent ? locate(type, name) : null;
-
-        String entryName = cont == null ? type + "." + currentMod.name + "-" + name + "." : type + "." + cont.name + ".";
-        I18NBundle bundle = Core.bundle;
-        while (bundle.getParent() != null) bundle = bundle.getParent();
-
-        if (value.has("name")) {
-            if (!Core.bundle.has(entryName + "name")) {
-                bundle.getProperties().put(entryName + "name", value.getString("name"));
-                if (cont != null) cont.localizedName = value.getString("name");
-            }
-            value.remove("name");
-        }
-
-        if (value.has("description")) {
-            if (!Core.bundle.has(entryName + "description")) {
-                bundle.getProperties().put(entryName + "description", value.getString("description"));
-                if (cont != null) cont.description = value.getString("description");
-            }
-            value.remove("description");
-        }
-    }
-
     /**
      * Call to read a content's extra info later.
      */
@@ -950,6 +922,48 @@ public class ContentParser {
             }
         }
         return null;
+    }
+
+    private Consume[] parseConsumes(@Nullable Block block, JsonValue data) {
+        ConsumesParser consume = new ConsumesParser();
+        for (JsonValue child : data) {
+            switch (child.name) {
+                case "item" -> consume.consumeItem(find(ContentType.item, child.asString()));
+                case "itemCharged" -> consume.consume((Consume) parser.readValue(ConsumeItemCharged.class, child));
+                case "itemFlammable" -> consume.consume((Consume) parser.readValue(ConsumeItemFlammable.class, child));
+                case "itemRadioactive" ->
+                        consume.consume((Consume) parser.readValue(ConsumeItemRadioactive.class, child));
+                case "itemExplosive" -> consume.consume((Consume) parser.readValue(ConsumeItemExplosive.class, child));
+                case "itemExplode" -> consume.consume((Consume) parser.readValue(ConsumeItemExplode.class, child));
+                case "items" -> consume.consume(child.isArray() ?
+                        new ConsumeItems(parser.readValue(ItemStack[].class, child)) :
+                        parser.readValue(ConsumeItems.class, child));
+                case "liquidFlammable" ->
+                        consume.consume((Consume) parser.readValue(ConsumeLiquidFlammable.class, child));
+                case "liquid" -> consume.consume((Consume) parser.readValue(ConsumeLiquid.class, child));
+                case "liquids" -> consume.consume(child.isArray() ?
+                        new ConsumeLiquids(parser.readValue(LiquidStack[].class, child)) :
+                        parser.readValue(ConsumeLiquids.class, child));
+                case "coolant" -> consume.consume((Consume) parser.readValue(ConsumeCoolant.class, child));
+                case "power" -> {
+                    if (child.isNumber()) {
+                        consume.consumePower(child.asFloat());
+                    } else {
+                        consume.consume((Consume) parser.readValue(ConsumePower.class, child));
+                    }
+                }
+                case "powerBuffered" -> consume.consumePowerBuffered(child.asFloat());
+                default ->
+                        throw new IllegalArgumentException("Unknown consumption type: '" + child.name + "' on '" + (block == null ? data : block.name) + "'.");
+            }
+        }
+        var array = new Consume[consume.consumes.size];
+        int index = 0;
+        for (Consume c : consume.consumes) {
+            array[index] = c;
+            index++;
+        }
+        return array;
     }
 
     private GenericMesh parseMesh(Planet planet, JsonValue data) {

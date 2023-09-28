@@ -33,7 +33,7 @@ import mindustry.world.draw.DrawBlock;
 import mindustry.world.draw.DrawDefault;
 import mindustry.world.meta.BlockFlag;
 
-import static mindustry.Vars.*;
+import static mindustry.Vars.tilesize;
 
 public class MultipleCrafter extends Block {
     public FormulaStack formulas;
@@ -68,7 +68,7 @@ public class MultipleCrafter extends Block {
         boolean added = false;
         Seq<Liquid> addedLiquids = new Seq<>();
         for(var f : formulas.getFormulas()){
-            for (var cons : f.getInputs()) {
+            if (f.input != null) for (var cons : f.getInputs()) {
                 if (cons instanceof ConsumeLiquid liq) {
                     added = true;
                     if (addedLiquids.contains(liq.liquid)) continue;
@@ -102,7 +102,6 @@ public class MultipleCrafter extends Block {
     @Override
     public void load(){
         super.load();
-
         drawer.load(this);
     }
 

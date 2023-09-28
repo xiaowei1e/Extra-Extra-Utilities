@@ -7,23 +7,11 @@
   "liquidCapacity": 30,
   "formulas": [
     {
-      "input": [
-        {
-          "type": "ConsumeItems",
-          "items": [
-            "copper/1"
-          ]
-        },
-        {
-          "type": "ConsumeLiquid",
-          "liquid": "cryofluid",
-          "amount": 0.1
-        },
-        {
-          "type": "ConsumePower",
-          "usage": 0.1
-        }
-      ],
+      "input": {
+        "item": "copper",
+        "liquid": "cryofluid/0.1",
+        "power": 0.1
+      },
       "outputItems": [
         "titanium/2"
       ],
@@ -33,19 +21,10 @@
     },
     {
       "craftTime": 90,
-      "input": [
-        {
-          "type": "ConsumeItems",
-          "items": [
-            "copper/1"
-          ]
-        },
-        {
-          "type": "ConsumeLiquid",
-          "liquid": "oil",
-          "amount": 0.1
-        }
-      ],
+      "input": {
+        "item": "copper",
+        "liquid": "oil/0.1"
+      },
       "outputItems": [
         "coal/6"
       ]
