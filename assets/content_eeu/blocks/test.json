@@ -8,7 +8,7 @@
   "formulas": [
     {
       "input": {
-        "item": "copper",
+        "item": "$GEUBlocks>fireWork.requirements.$I0.item",
         "liquid": "cryofluid/0.1",
         "power": 0.1
       },

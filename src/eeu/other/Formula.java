@@ -14,6 +14,8 @@ import mindustry.world.meta.StatUnit;
 import mindustry.world.meta.StatValues;
 import mindustry.world.meta.Stats;
 
+import java.util.Arrays;
+
 public class Formula {
     @Nullable
     public Consume[] input;
@@ -53,23 +55,26 @@ public class Formula {
         this.outputLiquids = outputLiquids;
     }
     public void apply(Block block){
+        if (input == null) return;
         for(var c : input){
             c.apply(block);
         }
     }
     public void update(Building build){
+        if (input == null) return;
         for(var c : input){
             c.update(build);
         }
     }
     public void trigger(Building build){
+        if (input == null) return;
         for(var c : input){
             c.trigger(build);
         }
     }
     public void display(Stats stats, Block block){
         stats.timePeriod = craftTime;
-        for (var c : input){
+        if (input != null) for (var c : input) {
             c.display(stats);
         }
         if((block.hasItems && block.itemCapacity > 0) || outputItems != null){
@@ -85,10 +90,21 @@ public class Formula {
         }
     }
     public void build(Building build, Table table){
+        if (input == null) return;
         table.pane(t->{
             for (var c : input) {
                 c.build(build, t);
             }
         });
+    }
+
+    @Override
+    public String toString() {
+        return "Formula{" +
+                "input=" + Arrays.toString(input) +
+                ", outputItems=" + Arrays.toString(outputItems) +
+                ", outputLiquids=" + Arrays.toString(outputLiquids) +
+                ", craftTime=" + craftTime +
+                '}';
     }
 }

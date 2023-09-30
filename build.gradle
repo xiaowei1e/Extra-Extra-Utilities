@@ -19,6 +19,7 @@ ext {
     arcVersion = "v145"
     sdkVersion = "29.0.3"
     jabelVersion = "93fde537c7"
+    gamePath = "E:\\desktop\\app\\Mindustry-CN-ARC-Desktop-30610.jar"
     sdkRoot = System.getenv("ANDROID_HOME") ?: System.getenv("ANDROID_SDK_ROOT")
 }
 
@@ -106,12 +107,16 @@ task copy(type: Copy) {
         delete "C:\\Users\\wuxiaojie\\AppData\\Roaming\\Mindustry\\mods\\${project.archivesBaseName}.jar"
     }catch(ignored){}
     from "$buildDir/libs/${project.archivesBaseName}.jar"
-    into 'C:\\Users\\wuxiaojie\\AppData\\Roaming\\Mindustry\\mods'
+    into "C:\\Users\\${System.properties['user.name']}\\AppData\\Roaming\\Mindustry\\mods"
 }
 
-task 'game'{
+task playGame(dependsOn: classes, type: JavaExec) {
+
     dependsOn tasks.named("copy")
-    doLast{
-        "java -jar E:\\desktop\\app\\Mindustry-CN-ARC-Desktop-30480.jar".execute().waitForProcessOutput(System.out, System.err)
-    }
+
+    main = "-jar"
+    args = [
+            gamePath,
+            "-debug"
+    ]
 }

@@ -1,7 +1,6 @@
 package eeu;
 
 import arc.Events;
-import eeu.easterEgg.EggLoader;
 import mindustry.Vars;
 import mindustry.game.EventType;
 import mindustry.mod.Mod;

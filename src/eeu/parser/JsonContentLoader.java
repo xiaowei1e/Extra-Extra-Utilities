@@ -72,8 +72,8 @@ public class JsonContentLoader {
                 }
             }
         }
-
         //this finishes parsing content fields
         parser.finishParsing();
+        Log.debug("Parsing Finished: @", JsonContent.contents.toString());
     }
 }

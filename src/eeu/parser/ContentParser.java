@@ -392,7 +392,6 @@ public class ContentParser {
                 formula.input = parseConsumes(null, data.get("input"));
                 data.remove("input");
             }
-            Log.info(data);
             readFields(formula, data);
             return formula;
         });
@@ -432,8 +431,16 @@ public class ContentParser {
     }
 
     private <T extends Content> T find(ContentType type, String name) {
-        Content c = Vars.content.getByName(type, name);
-        if (c == null) c = Vars.content.getByName(type, currentMod.name + "-" + name);
+        Content c;
+        if (name.startsWith("$")) {
+            c = (Content) StringParser.parse(name);
+        } else {
+            Content first = Vars.content.getByName(type, name); //try vanilla replacement
+            Content first1 = Vars.content.getByName(type, currentMod.name + "-" + name);
+            Content first2 = Vars.content.getByName(type, "eeu-" + name);
+            Content first3 = Vars.content.getByName(type, "extra-utilities-" + name);
+            c = first != null ? first : (first1 != null ? first1 : (first2 != null ? first2 : first3));
+        }
         if (c == null) throw new IllegalArgumentException("No " + type + " found with name '" + name + "'");
         return (T) c;
     }
@@ -451,6 +458,16 @@ public class ContentParser {
 
         private <T> T internalRead(Class<T> type, Class elementType, JsonValue jsonData, Class keyType) {
             if (type != null) {
+                if (jsonData.isString()) {
+                    String str = jsonData.asString();
+                    if (str.startsWith("&")) {
+                        str = str.substring(2);
+                    }
+                    if (str.startsWith("$")) {
+                        T obj = (T) StringParser.parse(str);
+                        return obj;
+                    }
+                }
                 if (classParsers.containsKey(type)) {
                     try {
                         return (T) classParsers.get(type).parse(type, jsonData);
@@ -468,7 +485,6 @@ public class ContentParser {
                         String field = str.asString();
                         value |= Reflect.<Integer>get(Env.class, field);
                     }
-
                     return (T) (Integer) value;
                 }
 
@@ -525,7 +541,6 @@ public class ContentParser {
     private <T extends Content> TypeParser<T> parser(ContentType type, Func<String, T> constructor) {
         return (mod, name, value) -> {
             T item;
-            Log.info(name + "fuck");
             if (locate(type, name) != null) {
                 item = (T) locate(type, name);
                 readBundle(type, name, value);
@@ -907,6 +922,9 @@ public class ContentParser {
     }
 
     private <T extends MappableContent> T locate(ContentType type, String name) {
+        if (name.startsWith("$")) {
+            return (T) StringParser.parse(name);
+        }
         T first = Vars.content.getByName(type, name); //try vanilla replacement
         T first1 = Vars.content.getByName(type, currentMod.name + "-" + name);
         T first2 = Vars.content.getByName(type, "eeu-" + name);
@@ -925,7 +943,7 @@ public class ContentParser {
     }
 
     private Consume[] parseConsumes(@Nullable Block block, JsonValue data) {
-        ConsumesParser consume = new ConsumesParser();
+        ConsumesHandler consume = new ConsumesHandler();
         for (JsonValue child : data) {
             switch (child.name) {
                 case "item" -> consume.consumeItem(find(ContentType.item, child.asString()));

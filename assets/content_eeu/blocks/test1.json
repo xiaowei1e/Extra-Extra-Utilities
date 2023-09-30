@@ -1,0 +1,17 @@
+{
+  //only a test
+  "type": "MultiBulletTurret",
+  "name": "test",
+  "size": 3,
+  "ammoTypes": {
+    "$Gmindustry.Vars>content.items.random": [
+      "$Gmindustry.Vars>content.bullets.random",
+      "$Gmindustry.Vars>content.bullets.random",
+      "$Gmindustry.Vars>content.bullets.random"
+    ]
+  },
+  "requirements": [
+    "lightnin-alloy/600"
+  ],
+  "category": "turret"
+}

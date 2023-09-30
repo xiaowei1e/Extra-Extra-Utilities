@@ -10,7 +10,7 @@ import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
 import mindustry.world.consumers.*;
 
-public class ConsumesParser {
+public class ConsumesHandler {
     public Seq<Consume> consumes = new Seq<>();
 
     public ConsumeLiquid consumeLiquid(Liquid liquid, float amount) {
