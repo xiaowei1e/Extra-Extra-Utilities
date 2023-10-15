@@ -2,7 +2,7 @@ package eeu.override;
 
 import eeu.override.ui.dialogs.EEUContentInfoDialog;
 
-public class UIOverride {
+public class UIOverride implements Overridable {
     public EEUContentInfoDialog content;
 
     public UIOverride() {
@@ -10,6 +10,7 @@ public class UIOverride {
         //override();
     }
 
+    @Override
     public void override() {
         content.override();
     }

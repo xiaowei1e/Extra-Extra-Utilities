@@ -4,8 +4,8 @@
   "name": "test",
   "size": 3,
   "ammoTypes": {
-    "$Gmindustry.Vars>content.items.random": [
-      "$Gmindustry.Vars>content.bullets.random",
+    "$GBlocks>duo.requirements.$I0.item": [
+      "$GBlocks>duo.ammoTypes.($GItems>copper)",
       "$Gmindustry.Vars>content.bullets.random",
       "$Gmindustry.Vars>content.bullets.random"
     ]

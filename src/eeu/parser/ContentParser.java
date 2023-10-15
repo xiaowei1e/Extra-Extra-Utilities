@@ -323,6 +323,11 @@ public class ContentParser {
             readFields(obj, data);
             return obj;
         });
+        put(UnlockableContent.class, (type, data) -> {
+            if (data.isString()) {
+                return locateAny(data.asString());
+            } else return null;
+        });
         put(Ability.class, (type, data) -> {
             Class<? extends Ability> oc = resolve(data.getString("type", ""));
             data.remove("type");
@@ -464,8 +469,7 @@ public class ContentParser {
                         str = str.substring(2);
                     }
                     if (str.startsWith("$")) {
-                        T obj = (T) StringParser.parse(str);
-                        return obj;
+                        return (T) StringParser.parse(str);
                     }
                 }
                 if (classParsers.containsKey(type)) {
@@ -1244,6 +1248,10 @@ public class ContentParser {
     <T> Class<T> resolve(String base, Class<T> def) {
         //no base class specified
         if ((base == null || base.isEmpty()) && def != null) return def;
+        if (base.startsWith("$")) {
+            var o = StringParser.parse(base);
+            if (o instanceof Class c) return c;
+        }
 
         //return mapped class if found in the global map
         var out = Classes.classes.get(!base.isEmpty() && Character.isLowerCase(base.charAt(0)) ? Strings.capitalize(base) : base);

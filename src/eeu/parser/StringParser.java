@@ -32,7 +32,6 @@ public class StringParser {
     public static Object parseGet(String get) {
         Seq<String> seq = splitCleverly(get, ">");
         var Class = findClass(seq.remove(0));
-        ;
         if (seq.isEmpty()) return Class;
         if (!seq.first().contains(".")) {
             return readPath(Class, seq.remove(0));
@@ -52,7 +51,6 @@ public class StringParser {
             else f = findField(base, in);
             if (f != null) return f;
         } catch (Exception e) {
-            ;
             if (parse(in) instanceof Integer i) try {
                 return Array.get(base, i);
             } catch (Exception e1) {
@@ -72,7 +70,7 @@ public class StringParser {
                     else m = findMethod(base, in);
                     return m;
                 } catch (Exception e1) {
-                    Log.info(e1);
+                    Log.info(e1.getMessage());
                 }
             }
         }

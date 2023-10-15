@@ -1,6 +1,7 @@
 package eeu;
 
 import arc.Events;
+import eeu.content.EEUShaders;
 import mindustry.Vars;
 import mindustry.game.EventType;
 import mindustry.mod.Mod;
@@ -23,6 +24,7 @@ public class EEUMod extends Mod {
     public void loadContent() {
         initInfo();
         eeu.load();
+        EEUShaders.gravity.add(100 * 8, 100 * 8, 10 * 8, 1);
         //EggLoader.load();
     }
 
