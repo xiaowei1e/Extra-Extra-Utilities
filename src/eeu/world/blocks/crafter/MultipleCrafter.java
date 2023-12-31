@@ -1,5 +1,6 @@
 package eeu.world.blocks.crafter;
 
+import arc.Core;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
@@ -10,28 +11,37 @@ import arc.scene.ui.layout.Table;
 import arc.struct.EnumSet;
 import arc.struct.Seq;
 import arc.util.Eachable;
+import arc.util.Strings;
 import arc.util.Time;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import eeu.other.Formula;
 import eeu.other.FormulaStack;
-import eeu.other.stats.StatValues;
-import eeu.other.stats.Stats;
+import eeu.other.stats.EEUStatValues;
+import eeu.other.stats.EEUStats;
+import eeu.world.consumes.ConsumePowerMultiple;
+import mindustry.core.UI;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.gen.Sounds;
+import mindustry.graphics.Pal;
 import mindustry.logic.LAccess;
 import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
+import mindustry.ui.Bar;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
+import mindustry.world.blocks.heat.HeatBlock;
+import mindustry.world.blocks.heat.HeatConsumer;
 import mindustry.world.consumers.ConsumeLiquid;
 import mindustry.world.consumers.ConsumeLiquids;
-import mindustry.world.draw.DrawBlock;
-import mindustry.world.draw.DrawDefault;
+import mindustry.world.consumers.ConsumePower;
+import mindustry.world.draw.*;
 import mindustry.world.meta.BlockFlag;
+
+import java.util.ArrayList;
 
 import static mindustry.Vars.tilesize;
 
@@ -39,6 +49,7 @@ public class MultipleCrafter extends Block {
     public FormulaStack formulas;
     public boolean dumpExtraLiquid = true;
     public boolean ignoreLiquidFullness = false;
+    public boolean heatBlock = false;
     public DrawBlock drawer = new DrawDefault();
 
     public MultipleCrafter(String name){
@@ -54,21 +65,30 @@ public class MultipleCrafter extends Block {
         formulas = new FormulaStack();
         configurable = true;
         config(Integer.class, (build,value) -> ((MultipleCrafterBuilding)build).setIndex(value));
+        buildType = () -> heatBlock ? new HeatMultipleCrafterBuilding() : new MultipleCrafterBuilding();
     }
 
     @Override
     public void setStats(){
         super.setStats();
-        stats.add(Stats.formula, StatValues.formulas(formulas, this));
+        stats.add(EEUStats.formula, EEUStatValues.formulas(formulas, this));
     }
 
     @Override
     public void setBars(){
         super.setBars();
         boolean added = false;
+        boolean outPower = false;
+        boolean consP = false;
+        boolean needHeat = false;
+        boolean outHeat = false;
         Seq<Liquid> addedLiquids = new Seq<>();
         for(var f : formulas.getFormulas()){
+            if (f.powerProduction > 0) outPower = true;
+            if (f.heatOutput > 0) outHeat = true;
+            if (f.heatRequirement > 0) needHeat = true;
             if (f.input != null) for (var cons : f.getInputs()) {
+                if (cons instanceof ConsumePower) consP = true;
                 if (cons instanceof ConsumeLiquid liq) {
                     added = true;
                     if (addedLiquids.contains(liq.liquid)) continue;
@@ -92,6 +112,32 @@ public class MultipleCrafter extends Block {
                 addLiquidBar(build -> build.liquids.current());
             }
         }
+        if (outPower) {
+            addBar("outPower", (MultipleCrafterBuilding entity) -> new Bar(() ->
+                    Core.bundle.format("bar.poweroutput",
+                            Strings.fixed(entity.getPowerProduction() * 60 * entity.timeScale(), 1)),
+                    () -> Pal.powerBar,
+                    () -> entity.efficiency));
+        }
+        if (consP) {
+            addBar("power", (MultipleCrafterBuilding entity) -> new Bar(
+                    () -> (entity.consPower != null && entity.consPower.buffered) ? Core.bundle.format("bar.poweramount", Float.isNaN(entity.power.status * entity.consPower.capacity) ? "<ERROR>" : UI.formatAmount((int) (entity.power.status * entity.consPower.capacity))) :
+                            Core.bundle.get("bar.power"),
+                    () -> Pal.powerBar,
+                    () -> Mathf.zero(entity.consPower == null ? 0 : entity.consPower.requestedPower(entity)) && entity.power.graph.getPowerProduced() + entity.power.graph.getBatteryStored() > 0f ? 1f : entity.power.status
+            ));
+        }
+        if (!heatBlock) return;
+        if (outHeat) {
+            addBar("outHeat", (HeatMultipleCrafterBuilding entity) -> new Bar("bar.heat", Pal.lightOrange, () -> entity.heat / entity.formula.heatOutput));
+        }
+        if (needHeat) {
+            addBar("heat", (HeatMultipleCrafterBuilding entity) ->
+                    new Bar(() ->
+                            Core.bundle.format("bar.heatpercent", (int) entity.heatReq, (int) Math.min((entity.heatReq / entity.formula.heatRequirement * 100), entity.formula.maxHeatEfficiency)),
+                            () -> Pal.lightOrange,
+                            () -> entity.heatReq / entity.formula.heatRequirement));
+        }
     }
 
     @Override
@@ -109,6 +155,35 @@ public class MultipleCrafter extends Block {
     public void init(){
         super.init();
         formulas.apply(this);
+        if (hasPower && consumesPower) {
+            ArrayList<ConsumePower> cs = new ArrayList<>();
+            for (var f : formulas.getFormulas()) {
+                ConsumePower p = f.getConsPower();
+                if (p != null) cs.add(p);
+            }
+            ConsumePower[] csa = new ConsumePower[]{};
+            consPower = new ConsumePowerMultiple(cs.toArray(csa));
+        }
+        if (heatBlock) {
+            if (drawer.getClass() == DrawDefault.class) {
+                var drawMul = new DrawBlock[]{};
+                var drawList = new ArrayList<DrawBlock>();
+                drawList.add(new DrawDefault());
+                boolean needHeat = false;
+                boolean outputHeat = false;
+                for (var f : formulas.getFormulas()) {
+                    if (f.heatRequirement > 0) needHeat = true;
+                    if (f.heatOutput > 0) outputHeat = true;
+                }
+                if (needHeat) drawList.add(new DrawHeatInput());
+                if (outputHeat) drawList.add(new DrawHeatOutput());
+                drawMul = drawList.toArray(drawMul);
+                drawer = new DrawMulti(drawMul);
+            }
+            rotateDraw = false;
+            rotate = true;
+            drawArrow = true;
+        }
     }
 
     @Override
@@ -139,6 +214,8 @@ public class MultipleCrafter extends Block {
         public Formula formula = formulas.getFormula(formulaIndex);
         public ItemStack[] outputItems = formula.getOutputItems();
         public LiquidStack[] outputLiquids = formula.getOutputLiquids();
+        public float powerProductionTimer = 0f;
+        public ConsumePower consPower;
 
         @Override
         public void draw(){
@@ -234,6 +311,7 @@ public class MultipleCrafter extends Block {
             if(update && efficiency > 0){
                 formula.update(this);
             }
+            if (powerProductionTimer > 0) powerProductionTimer--;
         }
 
         @Override
@@ -247,6 +325,7 @@ public class MultipleCrafter extends Block {
             formula = formulas.getFormula(formulaIndex);
             outputItems = formula.getOutputItems();
             outputLiquids = formula.getOutputLiquids();
+            consPower = formula.getConsPower();
 
             if(efficiency > 0){
 
@@ -316,6 +395,11 @@ public class MultipleCrafter extends Block {
             return super.getProgressIncrease(baseTime) * (dumpExtraLiquid ? Math.min(max, 1f) : scaling);
         }
 
+        @Override
+        public float getPowerProduction() {
+            return powerProductionTimer > 0f ? formula.powerProduction * efficiency : 0f;
+        }
+
         public float warmupTarget(){
             return 1f;
         }
@@ -345,6 +429,7 @@ public class MultipleCrafter extends Block {
                 formula.craftEffect.at(x, y);
             }
             progress %= 1f;
+            powerProductionTimer += formula.craftTime / efficiency + 1f;
         }
 
         public void dumpOutputs(){
@@ -418,6 +503,62 @@ public class MultipleCrafter extends Block {
             progress = read.f();
             warmup = read.f();
             formulaIndex = read.b();
+        }
+    }
+
+    public class HeatMultipleCrafterBuilding extends MultipleCrafterBuilding implements HeatBlock, HeatConsumer {
+        public float heat;
+        public float heatReq;
+        public float[] sideHeat = new float[4];
+
+        @Override
+        public void updateTile() {
+            super.updateTile();
+            //heat approaches target at the same speed regardless of efficiency
+            heat = Mathf.approachDelta(heat, formula.heatOutput * efficiency, formula.warmupRate * delta());
+            if (formula.heatRequirement > 0) {
+                heatReq = calculateHeat(sideHeat);
+            }
+        }
+
+        @Override
+        public void updateEfficiencyMultiplier() {
+            super.updateEfficiencyMultiplier();
+            if (formula.heatRequirement > 0) {
+                efficiency *= Math.min(Math.max(heatReq / formula.heatRequirement, cheating() ? 1f : 0f), formula.maxHeatEfficiency);
+            }
+        }
+
+        @Override
+        public float heat() {
+            return heat;
+        }
+
+        @Override
+        public float heatFrac() {
+            return heat / formula.heatOutput;
+        }
+
+        @Override
+        public float[] sideHeat() {
+            return sideHeat;
+        }
+
+        @Override
+        public float heatRequirement() {
+            return formula.heatRequirement;
+        }
+
+        @Override
+        public void write(Writes write) {
+            super.write(write);
+            write.f(heat);
+        }
+
+        @Override
+        public void read(Reads read, byte revision) {
+            super.read(read, revision);
+            heat = read.f();
         }
     }
 }

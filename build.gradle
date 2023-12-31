@@ -104,7 +104,7 @@ task deploy(type: Jar) {
 task copy(type: Copy) {
     dependsOn tasks.named("deploy")
     try{
-        delete "C:\\Users\\wuxiaojie\\AppData\\Roaming\\Mindustry\\mods\\${project.archivesBaseName}.jar"
+        delete "C:\\Users\\${System.properties['user.name']}\\AppData\\Roaming\\Mindustry\\mods\\${project.archivesBaseName}.jar"
     }catch(ignored){}
     from "$buildDir/libs/${project.archivesBaseName}.jar"
     into "C:\\Users\\${System.properties['user.name']}\\AppData\\Roaming\\Mindustry\\mods"

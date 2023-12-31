@@ -4,7 +4,7 @@ import arc.Core;
 import arc.func.Floatp;
 import arc.graphics.Color;
 import arc.math.Mathf;
-import eeu.other.stats.Stats;
+import eeu.other.stats.EEUStats;
 import eeu.ui.tables.MultipleBar;
 import mindustry.graphics.Pal;
 import mindustry.world.blocks.defense.Wall;
@@ -31,8 +31,8 @@ public class CrispWall extends Wall {
     @Override
     public void setStats() {
         super.setStats();
-        stats.add(Stats.maxHandleDamage, maxHandleDamage);
-        stats.add(Stats.restoreSpeed, restoreSpeed * 60f, StatUnit.perSecond);
+        stats.add(EEUStats.maxHandleDamage, maxHandleDamage);
+        stats.add(EEUStats.restoreSpeed, restoreSpeed * 60f, StatUnit.perSecond);
     }
 
     public class CrispWallBuilding extends WallBuild{
