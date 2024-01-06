@@ -27,7 +27,7 @@ public class RotationButton extends Table {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button) {
                 if (isTouched) return false;
-                setTouchPoint(x, y);
+                setTouchPoint(x, y - height / 2);
                 setAngle(touchPoint.angle());
                 isTouched = true;
                 return true;
@@ -35,7 +35,7 @@ public class RotationButton extends Table {
 
             @Override
             public void touchDragged(InputEvent event, float x, float y, int pointer) {
-                setTouchPoint(x, y);
+                setTouchPoint(x, y - height / 2);
                 setAngle(touchPoint.angle());
                 isTouched = true;
             }

@@ -20,14 +20,15 @@ import mindustry.ui.Fonts;
 import java.util.Arrays;
 
 public class MultipleBar extends Bar {
-    private static Rect scissor = new Rect();
+    private static final Rect scissor = new Rect();
 
     private Floatp[] fraction;
     private CharSequence name = "";
     private float[] value, lastValue, sortValue;
     private float[] computed;
     private float outlineRadius, blink;
-    private Color blinkColor = new Color(), outlineColor = new Color();
+    private final Color blinkColor = new Color();
+    private final Color outlineColor = new Color();
     private Color[] colors, sortColors;
 
     public MultipleBar(String name, Color[] color, Floatp[] fraction){
@@ -143,9 +144,7 @@ public class MultipleBar extends Bar {
             Draw.alpha(parentAlpha);
             bar.draw(x, y, width, height);
         }
-        for(int i = 0; i < value.length; i++){
-            sortValue[i] = value[i];
-        }
+        System.arraycopy(value, 0, sortValue, 0, value.length);
         Arrays.sort(sortValue);
         Arrays.sort(sortColors, (a, b)->{
             float va = fraction[Arrays.asList(colors).indexOf(a)].get();

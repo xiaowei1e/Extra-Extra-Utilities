@@ -2,13 +2,14 @@ package eeu.content;
 
 import ExtraUtilities.content.EUItems;
 import eeu.world.blocks.defense.CrispWall;
+import eeu.world.blocks.power.RotatableBeamNode;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.meta.Env;
 
 public class EEUBlocks {
-    public static Block crispWall, crispWallLarge;
+    public static Block test, crispWallLarge;
 
     public static void load() {
         int wallHealthMultiplier = 4;
@@ -26,6 +27,11 @@ public class EEUBlocks {
             maxHandleDamage = health * 0.8f;
             restoreSpeed = maxHandleDamage * 0.1f / 60f;
             envDisabled |= Env.scorching;
+        }};
+        test = new RotatableBeamNode("rot") {{
+            requirements(Category.power, ItemStack.with(EUItems.crispSteel, 24));
+            size = 3;
+            range = 16;
         }};
         /*polarZone = new PowerTurret("polar-zone") {{
 
