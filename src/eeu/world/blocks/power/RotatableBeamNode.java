@@ -1,9 +1,11 @@
 package eeu.world.blocks.power;
 
+import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
+import arc.graphics.g2d.TextureRegion;
 import arc.math.Angles;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
@@ -18,6 +20,7 @@ import arc.util.io.Writes;
 import eeu.ui.tables.RotationButton;
 import mindustry.core.Renderer;
 import mindustry.core.World;
+import mindustry.entities.TargetPriority;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Tex;
@@ -29,6 +32,7 @@ import mindustry.world.Tile;
 import mindustry.world.blocks.power.BeamNode;
 import mindustry.world.blocks.power.PowerGraph;
 import mindustry.world.meta.BlockStatus;
+import mindustry.world.meta.Env;
 
 import static mindustry.Vars.tilesize;
 import static mindustry.Vars.world;
@@ -36,11 +40,33 @@ import static mindustry.Vars.world;
 public class RotatableBeamNode extends BeamNode {
     public float rotateSpeed = 1f;
     public float shootY = 0f;
+    private TextureRegion topRegion;
 
     public RotatableBeamNode(String name) {
         super(name);
+        consumesPower = outputsPower = true;
+        envEnabled |= Env.space;
+        underBullets = true;
+        priority = TargetPriority.transport;
         configurable = true;
-        config(Float.class, (e, v) -> ((RotatableBeamNodeBuild) e).rotationButton.angle = v);
+        outlineIcon = true;
+        config(Float.class, (e, v) -> {
+            if (e instanceof RotatableBeamNodeBuild b) {
+                b.rotationButton.angle = v;
+                b.ang = v;
+            }
+        });
+    }
+
+    @Override
+    public void load() {
+        super.load();
+        topRegion = Core.atlas.find(name + "-top");
+    }
+
+    @Override
+    protected TextureRegion[] icons() {
+        return new TextureRegion[]{region, topRegion};
     }
 
     @Override
@@ -59,22 +85,25 @@ public class RotatableBeamNode extends BeamNode {
         public Building toLink = null;
         public Tile toDest = null;
         public float rotation = 0;
+        public float ang = 0;
         private int dPos = -1;
         public RotationButton rotationButton = new RotationButton();
 
         @Override
         public void updateTile() {
+            if (ang != rotation) updateLine();
             if (lastChange != world.tileChanges) {
                 lastChange = world.tileChanges;
                 updateLine();
             }
-            rotation = Angles.moveToward(rotation, rotationButton.angle, rotateSpeed);
+            rotation = Angles.moveToward(rotation, ang, rotateSpeed);
         }
 
         @Override
         public Building init(Tile tile, Team team, boolean shouldAdd, int rotation) {
             RotatableBeamNodeBuild build = (RotatableBeamNodeBuild) super.init(tile, team, shouldAdd, rotation);
             float ang = rotation * 90 + 90;
+            build.ang = ang;
             build.rotation = ang;
             build.rotationButton.setAngle(ang);
             build.rotationButton.background(Tex.pane);
@@ -83,7 +112,11 @@ public class RotatableBeamNode extends BeamNode {
 
         @Override
         public void buildConfiguration(Table table) {
-            table.add(rotationButton).size(100f).update(b -> configure(b.angle));
+            table.add(rotationButton).size(100f).update(b -> {
+                if (ang != b.angle) {
+                    configure(b.angle);
+                }
+            });
         }
 
         @Override
@@ -94,7 +127,6 @@ public class RotatableBeamNode extends BeamNode {
             Color color = Pal.accent;
             Drawf.dashLine(color, tileX, tileY, Tmp.v1.x, Tmp.v1.y);
             Draw.color(color, 0.25f);
-            updateLine();
             if (toDest == null) return;
             Rect rect = Tmp.r1;
             rect.setCentered(toDest.x * tilesize, toDest.y * tilesize, toDest.block().size * tilesize);
@@ -104,6 +136,7 @@ public class RotatableBeamNode extends BeamNode {
         @Override
         public void draw() {
             super.draw();
+            Draw.rect(topRegion, x, y, rotation - 90f);
             if (Mathf.zero(Renderer.laserOpacity) || toLink == null || toDest == null) return;
             Draw.z(Layer.power);
             Draw.color(laserColor1, laserColor2, (1f - power.graph.getSatisfaction()) * 0.86f + Mathf.absin(3f, 0.1f));
@@ -143,22 +176,18 @@ public class RotatableBeamNode extends BeamNode {
                         return true;
                     }
                     if (dPos > -1) dPos = -1;
-                    toLink = other;
-                    toDest = other.tile;
+                    if (toLink != other) setConnection(other.pos());
                     Vec2 hv = Geometry.raycastRect(v1.x + x, v1.y + y, v2.x, v2.y, Tmp.r1.setCentered(toLink.x, toLink.y, toLink.block.size * tilesize));
                     if (hv == null) {
-                        toLink = null;
-                        toDest = null;
+                        if (toLink != null || toDest != null) setConnection(null);
                         return false;
                     }
                     return true;
                 }
-                if (other == null) {
-                    toLink = null;
-                    toDest = null;
-                }
+                if ((toLink != null || toDest != null) && other == null) setConnection(null);
                 return false;
             });
+            //cvcvcvcvcvcvcvcv
             if (prev != toLink) {
                 if (prev != null) {
                     prev.power.links.removeValue(pos());
@@ -184,6 +213,15 @@ public class RotatableBeamNode extends BeamNode {
             }
         }
 
+        public void setConnection(Building building) {
+            toLink = building;
+            toDest = building == null ? null : building.tile;
+        }
+
+        public void setConnection(int pos) {
+            setConnection(world.build((short) (pos >>> 16), (short) (pos & 0xFFFF)));
+        }
+
         @Override
         public void write(Writes write) {
             super.write(write);
@@ -197,6 +235,7 @@ public class RotatableBeamNode extends BeamNode {
             super.read(read, revision);
             rotationButton.setAngle(read.f());
             rotation = rotationButton.angle;
+            ang = rotation;
             boolean bool = read.bool();
             int pos = read.i();
             if (!bool) {

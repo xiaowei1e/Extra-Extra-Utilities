@@ -13,5 +13,8 @@ public class EEUTechTree {
                 node(EEUBlocks.crispWallLarge);
             });
         });
+        addToNode(Blocks.beamNode, () -> {
+            node(EEUBlocks.rotatableBeamNode);
+        });
     }
 }

@@ -33,10 +33,9 @@ allprojects {
 dependencies{
     compileOnly "com.github.Anuken.Arc:arc-core:$arcVersion"
     compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
-    compileOnly files(
+    compileOnly(files(
             "E:\\desktop\\in\\mod\\eu1.1.2.4.jar",
-            "E:\\desktop\\in\\mod\\mindustry-Extra-Utilities-mod-main\\src"
-    )
+    ))
     annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
 }
 
