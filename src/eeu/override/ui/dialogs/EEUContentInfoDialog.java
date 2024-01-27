@@ -17,8 +17,9 @@ import mindustry.world.meta.StatCat;
 import mindustry.world.meta.StatValue;
 import mindustry.world.meta.Stats;
 
-import static arc.Core.*;
-import static mindustry.Vars.*;
+import static arc.Core.settings;
+import static mindustry.Vars.iconXLarge;
+import static mindustry.Vars.ui;
 
 public class EEUContentInfoDialog extends ContentInfoDialog implements OverrideUI {
     @Override

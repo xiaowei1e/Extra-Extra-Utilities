@@ -21,24 +21,23 @@ import java.util.Arrays;
 
 public class MultipleBar extends Bar {
     private static final Rect scissor = new Rect();
-
+    private final Color blinkColor = new Color();
+    private final Color outlineColor = new Color();
     private Floatp[] fraction;
     private CharSequence name = "";
     private float[] value, lastValue, sortValue;
     private float[] computed;
     private float outlineRadius, blink;
-    private final Color blinkColor = new Color();
-    private final Color outlineColor = new Color();
     private Color[] colors, sortColors;
 
-    public MultipleBar(String name, Color[] color, Floatp[] fraction){
+    public MultipleBar(String name, Color[] color, Floatp[] fraction) {
         this.fraction = fraction;
         this.name = Core.bundle.get(name, name);
         this.blinkColor.set(color[0]);
         value = new float[fraction.length];
         lastValue = new float[fraction.length];
         sortValue = new float[fraction.length];
-        for(int i = 0; i < fraction.length; i++){
+        for (int i = 0; i < fraction.length; i++) {
             lastValue[i] = value[i] = fraction[i].get();
         }
         setColor(color[0]);
@@ -46,13 +45,13 @@ public class MultipleBar extends Bar {
         sortColors = colors.clone();
     }
 
-    public MultipleBar(Prov<CharSequence> name, Prov<Color[]> color, Floatp[] fraction){
+    public MultipleBar(Prov<CharSequence> name, Prov<Color[]> color, Floatp[] fraction) {
         this.fraction = fraction;
         value = new float[fraction.length];
         lastValue = new float[fraction.length];
         sortValue = new float[fraction.length];
         computed = new float[fraction.length];
-        for(int i = 0; i < fraction.length; i++){
+        for (int i = 0; i < fraction.length; i++) {
             lastValue[i] = value[i] = Mathf.clamp(fraction[i].get());
         }
         update(() -> {
@@ -64,21 +63,21 @@ public class MultipleBar extends Bar {
         });
     }
 
-    public MultipleBar(){
+    public MultipleBar() {
         super();
     }
 
-    public void reset(float[] value){
+    public void reset(float[] value) {
         blink = value[0];
         this.value = lastValue = value;
     }
 
-    public void set(Prov<String> name, Floatp[] fraction, Color[] color){
+    public void set(Prov<String> name, Floatp[] fraction, Color[] color) {
         this.fraction = fraction;
         value = new float[fraction.length];
         lastValue = new float[fraction.length];
         sortValue = new float[fraction.length];
-        for(int i = 0; i < fraction.length; i++){
+        for (int i = 0; i < fraction.length; i++) {
             lastValue[i] = value[i] = fraction[i].get();
         }
         this.blinkColor.set(color[0]);
@@ -88,40 +87,40 @@ public class MultipleBar extends Bar {
         update(() -> this.name = name.get());
     }
 
-    public void snap(){
+    public void snap() {
         value = new float[fraction.length];
         lastValue = new float[fraction.length];
         sortValue = new float[fraction.length];
-        for(int i = 0; i < fraction.length; i++){
+        for (int i = 0; i < fraction.length; i++) {
             lastValue[i] = value[i] = fraction[i].get();
         }
     }
 
-    public Bar outline(Color color, float stroke){
+    public Bar outline(Color color, float stroke) {
         outlineColor.set(color);
         outlineRadius = Scl.scl(stroke);
         return this;
     }
 
-    public void flash(){
+    public void flash() {
         blink = 1f;
     }
 
-    public Bar blink(Color color){
+    public Bar blink(Color color) {
         blinkColor.set(color);
         return this;
     }
 
     @Override
-    public void draw(){
-        if(fraction == null) return;
+    public void draw() {
+        if (fraction == null) return;
 
-        for(int i = 0; i < fraction.length; i++){
+        for (int i = 0; i < fraction.length; i++) {
             computed[i] = Mathf.clamp(fraction[i].get());
         }
 
 
-        for(int i = 0; i < computed.length; i++) {
+        for (int i = 0; i < computed.length; i++) {
             blink = 1f;
             if (lastValue[i] > computed[i]) {
                 lastValue = computed;
@@ -146,22 +145,22 @@ public class MultipleBar extends Bar {
         }
         System.arraycopy(value, 0, sortValue, 0, value.length);
         Arrays.sort(sortValue);
-        Arrays.sort(sortColors, (a, b)->{
+        Arrays.sort(sortColors, (a, b) -> {
             float va = fraction[Arrays.asList(colors).indexOf(a)].get();
             float vb = fraction[Arrays.asList(colors).indexOf(b)].get();
             return Float.compare(va, vb);
         });
-        for(int i = sortValue.length - 1; i >= 0; i--){
+        for (int i = sortValue.length - 1; i >= 0; i--) {
             Draw.color(sortColors[i], blinkColor, blink);
             Draw.alpha(parentAlpha);
 
             Drawable top = Tex.barTop;
             float topWidth = width * sortValue[i];
 
-            if(topWidth > Core.atlas.find("bar-top").width){
+            if (topWidth > Core.atlas.find("bar-top").width) {
                 top.draw(x, y, topWidth, height);
-            }else{
-                if(ScissorStack.push(scissor.set(x, y, topWidth, height))){
+            } else {
+                if (ScissorStack.push(scissor.set(x, y, topWidth, height))) {
                     top.draw(x, y, Core.atlas.find("bar-top").width, height);
                     ScissorStack.pop();
                 }

@@ -15,6 +15,10 @@ public class EEUShaders {
         gravity = new GravityShader();
     }
 
+    public static Fi getShaderFi(String name) {
+        return EEU.getInternalFile("shaders").child(name);
+    }
+
     public static class GravityShader extends EEULoadShader {
         private static final FrameBuffer buffer = new FrameBuffer();
         protected Seq<GravitySource> sources = new Seq<>(256);
@@ -64,9 +68,5 @@ public class EEUShaders {
         public EEULoadShader(String vertexShader, String fragmentShader) {
             super(getShaderFi(vertexShader), getShaderFi(fragmentShader));
         }
-    }
-
-    public static Fi getShaderFi(String name) {
-        return EEU.getInternalFile("shaders").child(name);
     }
 }

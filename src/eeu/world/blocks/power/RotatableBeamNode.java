@@ -14,13 +14,14 @@ import arc.math.geom.Rect;
 import arc.math.geom.Vec2;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
+import arc.util.Eachable;
 import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import eeu.ui.tables.RotationButton;
 import mindustry.core.Renderer;
 import mindustry.core.World;
-import mindustry.entities.TargetPriority;
+import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Tex;
@@ -32,7 +33,6 @@ import mindustry.world.Tile;
 import mindustry.world.blocks.power.BeamNode;
 import mindustry.world.blocks.power.PowerGraph;
 import mindustry.world.meta.BlockStatus;
-import mindustry.world.meta.Env;
 
 import static mindustry.Vars.tilesize;
 import static mindustry.Vars.world;
@@ -45,15 +45,16 @@ public class RotatableBeamNode extends BeamNode {
     public RotatableBeamNode(String name) {
         super(name);
         consumesPower = outputsPower = true;
-        envEnabled |= Env.space;
-        underBullets = true;
-        priority = TargetPriority.transport;
         configurable = true;
         outlineIcon = true;
+        lockRotation = false;
+        rotate = true;
+        rotateDraw = false;
+        drawArrow = true;
         config(Float.class, (e, v) -> {
             if (e instanceof RotatableBeamNodeBuild b) {
-                b.rotationButton.angle = v;
-                b.ang = v;
+                b.ang = b.rotation() * 90 + v;
+                b.rotationButton.angle = b.ang;
             }
         });
     }
@@ -70,9 +71,31 @@ public class RotatableBeamNode extends BeamNode {
     }
 
     @Override
+    public TextureRegion getPlanRegion(BuildPlan plan, Eachable<BuildPlan> list) {
+        return region;
+    }
+
+    @Override
     public void drawPlace(int x, int y, int rotation, boolean valid) {
         Lines.stroke(1f);
+        Draw.rect(topRegion, x * tilesize, y * tilesize, rotation * 90 - 90);
         Drawf.dashCircle(x * tilesize + offset, y * tilesize + offset, range * tilesize, Pal.placing);
+    }
+
+    @Override
+    public void flipRotation(BuildPlan req, boolean x) {
+        super.flipRotation(req, x);
+        if (req.config instanceof Float f) req.config = f - 2 * f;//why?
+    }
+
+    @Override
+    public void drawPlanConfig(BuildPlan plan, Eachable<BuildPlan> list) {
+        if (!(plan.config instanceof Float f)) return;
+        Draw.rect(topRegion, plan.drawx(), plan.drawy(), plan.rotation * 90 - 90 + f);
+        Tmp.v1.trns(plan.rotation * 90 + f, range * tilesize).add(plan.drawx(), plan.drawy());
+        Color color = Pal.accent;
+        Drawf.dashLine(color, plan.drawx(), plan.drawy(), Tmp.v1.x, Tmp.v1.y);
+        Draw.color(color, 0.25f);
     }
 
     @Override
@@ -86,8 +109,8 @@ public class RotatableBeamNode extends BeamNode {
         public Tile toDest = null;
         public float rotation = 0;
         public float ang = 0;
-        private int dPos = -1;
         public RotationButton rotationButton = new RotationButton();
+        private int dPos = -1;
 
         @Override
         public void updateTile() {
@@ -102,7 +125,7 @@ public class RotatableBeamNode extends BeamNode {
         @Override
         public Building init(Tile tile, Team team, boolean shouldAdd, int rotation) {
             RotatableBeamNodeBuild build = (RotatableBeamNodeBuild) super.init(tile, team, shouldAdd, rotation);
-            float ang = rotation * 90 + 90;
+            float ang = rotation * 90;
             build.ang = ang;
             build.rotation = ang;
             build.rotationButton.setAngle(ang);
@@ -111,10 +134,15 @@ public class RotatableBeamNode extends BeamNode {
         }
 
         @Override
+        public Object config() {
+            return ang - rotation() * 90;
+        }
+
+        @Override
         public void buildConfiguration(Table table) {
             table.add(rotationButton).size(100f).update(b -> {
                 if (ang != b.angle) {
-                    configure(b.angle);
+                    configure(b.angle - rotation() * 90);
                 }
             });
         }

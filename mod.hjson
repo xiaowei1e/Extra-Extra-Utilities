@@ -3,7 +3,7 @@ name: "eeu"
 author: "晓伟"
 main: "eeu.EEUMod"
 description: ""
-version: "0.1.0"
+version: "0.2.0"
 minGameVersion: 145
 dependencies: ["extra-utilities"]
 java: true

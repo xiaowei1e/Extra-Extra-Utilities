@@ -52,7 +52,7 @@ public class MultipleCrafter extends Block {
     public boolean heatBlock = false;
     public DrawBlock drawer = new DrawDefault();
 
-    public MultipleCrafter(String name){
+    public MultipleCrafter(String name) {
         super(name);
         update = true;
         solid = true;
@@ -64,18 +64,18 @@ public class MultipleCrafter extends Block {
         drawArrow = false;
         formulas = new FormulaStack();
         configurable = true;
-        config(Integer.class, (build,value) -> ((MultipleCrafterBuilding)build).setIndex(value));
+        config(Integer.class, (build, value) -> ((MultipleCrafterBuilding) build).setIndex(value));
         buildType = () -> heatBlock ? new HeatMultipleCrafterBuilding() : new MultipleCrafterBuilding();
     }
 
     @Override
-    public void setStats(){
+    public void setStats() {
         super.setStats();
         stats.add(EEUStats.formula, EEUStatValues.formulas(formulas, this));
     }
 
     @Override
-    public void setBars(){
+    public void setBars() {
         super.setBars();
         boolean added = false;
         boolean outPower = false;
@@ -83,7 +83,7 @@ public class MultipleCrafter extends Block {
         boolean needHeat = false;
         boolean outHeat = false;
         Seq<Liquid> addedLiquids = new Seq<>();
-        for(var f : formulas.getFormulas()){
+        for (var f : formulas.getFormulas()) {
             if (f.powerProduction > 0) outPower = true;
             if (f.heatOutput > 0) outHeat = true;
             if (f.heatRequirement > 0) needHeat = true;
@@ -103,7 +103,7 @@ public class MultipleCrafter extends Block {
                     }
                 }
             }
-            if(f.getOutputLiquids() != null) for (var out : f.getOutputLiquids()){
+            if (f.getOutputLiquids() != null) for (var out : f.getOutputLiquids()) {
                 if (addedLiquids.contains(out.liquid)) continue;
                 addedLiquids.add(out.liquid);
                 addLiquidBar(out.liquid);
@@ -141,18 +141,18 @@ public class MultipleCrafter extends Block {
     }
 
     @Override
-    public boolean rotatedOutput(int x, int y){
+    public boolean rotatedOutput(int x, int y) {
         return false;
     }
 
     @Override
-    public void load(){
+    public void load() {
         super.load();
         drawer.load(this);
     }
 
     @Override
-    public void init(){
+    public void init() {
         super.init();
         formulas.apply(this);
         if (hasPower && consumesPower) {
@@ -187,22 +187,22 @@ public class MultipleCrafter extends Block {
     }
 
     @Override
-    public void drawPlanRegion(BuildPlan plan, Eachable<BuildPlan> list){
+    public void drawPlanRegion(BuildPlan plan, Eachable<BuildPlan> list) {
         drawer.drawPlan(this, plan, list);
     }
 
     @Override
-    public TextureRegion[] icons(){
+    public TextureRegion[] icons() {
         return drawer.finalIcons(this);
     }
 
     @Override
-    public boolean outputsItems(){
+    public boolean outputsItems() {
         return formulas.outputItems();
     }
 
     @Override
-    public void getRegionsToOutline(Seq<TextureRegion> out){
+    public void getRegionsToOutline(Seq<TextureRegion> out) {
         drawer.getRegionsToOutline(this, out);
     }
 
@@ -218,41 +218,41 @@ public class MultipleCrafter extends Block {
         public ConsumePower consPower;
 
         @Override
-        public void draw(){
+        public void draw() {
             drawer.draw(this);
         }
 
         @Override
-        public void drawLight(){
+        public void drawLight() {
             super.drawLight();
             drawer.drawLight(this);
         }
 
         @Override
-        public boolean shouldConsume(){
-            if(outputItems != null){
-                for(var output : outputItems){
-                    if(items.get(output.item) + output.amount > itemCapacity){
+        public boolean shouldConsume() {
+            if (outputItems != null) {
+                for (var output : outputItems) {
+                    if (items.get(output.item) + output.amount > itemCapacity) {
                         return false;
                     }
                 }
             }
 
-            if(outputLiquids != null && !ignoreLiquidFullness){
+            if (outputLiquids != null && !ignoreLiquidFullness) {
                 boolean allFull = true;
-                for(var output : outputLiquids){
-                    if(liquids.get(output.liquid) >= liquidCapacity - 0.001f){
-                        if(!dumpExtraLiquid){
+                for (var output : outputLiquids) {
+                    if (liquids.get(output.liquid) >= liquidCapacity - 0.001f) {
+                        if (!dumpExtraLiquid) {
                             return false;
                         }
-                    }else{
+                    } else {
                         //if there's still space left, it's not full for all liquids
                         allFull = false;
                     }
                 }
 
                 //if there is no space left for any liquid, it can't reproduce
-                if(allFull){
+                if (allFull) {
                     return false;
                 }
             }
@@ -263,7 +263,7 @@ public class MultipleCrafter extends Block {
         @Override
         public void updateConsumption() {
             //everything is valid when cheating
-            if(formula.getInputs() == null || cheating()){
+            if (formula.getInputs() == null || cheating()) {
                 potentialEfficiency = enabled && productionValid() ? 1f : 0f;
                 efficiency = optionalEfficiency = shouldConsume() ? potentialEfficiency : 0f;
                 updateEfficiencyMultiplier();
@@ -271,7 +271,7 @@ public class MultipleCrafter extends Block {
             }
 
             //disabled -> nothing works
-            if(!enabled){
+            if (!enabled) {
                 potentialEfficiency = efficiency = optionalEfficiency = 0f;
                 return;
             }
@@ -284,12 +284,12 @@ public class MultipleCrafter extends Block {
             efficiency = optionalEfficiency = 1f;
 
             //first pass: get the minimum efficiency of any consumer
-            for(var cons : formula.getInputs()){
+            for (var cons : formula.getInputs()) {
                 minEfficiency = Math.min(minEfficiency, cons.efficiency(self()));
             }
 
             //same for optionals
-            for(var cons : formula.getInputs()){
+            for (var cons : formula.getInputs()) {
                 optionalEfficiency = Math.min(optionalEfficiency, cons.efficiency(self()));
             }
 
@@ -301,14 +301,14 @@ public class MultipleCrafter extends Block {
             potentialEfficiency = efficiency;
 
             //no updating means zero efficiency
-            if(!update){
+            if (!update) {
                 efficiency = optionalEfficiency = 0f;
             }
 
             updateEfficiencyMultiplier();
 
             //second pass: update every consumer based on efficiency
-            if(update && efficiency > 0){
+            if (update && efficiency > 0) {
                 formula.update(this);
             }
             if (powerProductionTimer > 0) powerProductionTimer--;
@@ -321,34 +321,34 @@ public class MultipleCrafter extends Block {
         }
 
         @Override
-        public void updateTile(){
+        public void updateTile() {
             formula = formulas.getFormula(formulaIndex);
             outputItems = formula.getOutputItems();
             outputLiquids = formula.getOutputLiquids();
             consPower = formula.getConsPower();
 
-            if(efficiency > 0){
+            if (efficiency > 0) {
 
                 progress += getProgressIncrease(formula.craftTime);
                 warmup = Mathf.approachDelta(warmup, warmupTarget(), formula.warmupSpeed);
 
                 //continuously output based on efficiency
-                if(outputLiquids != null){
+                if (outputLiquids != null) {
                     float inc = getProgressIncrease(1f);
-                    for(var output : outputLiquids){
+                    for (var output : outputLiquids) {
                         handleLiquid(this, output.liquid, Math.min(output.amount * inc, liquidCapacity - liquids.get(output.liquid)));
                     }
                 }
 
-                if(wasVisible && Mathf.chanceDelta(formula.updateEffectChance)){
+                if (wasVisible && Mathf.chanceDelta(formula.updateEffectChance)) {
                     formula.updateEffect.at(x + Mathf.range(size * 4f), y + Mathf.range(size * 4));
                 }
-            }else{
+            } else {
                 warmup = Mathf.approachDelta(warmup, 0f, formula.warmupSpeed);
             }
             totalProgress += warmup * Time.delta;
 
-            if(progress >= 1f){
+            if (progress >= 1f) {
                 craft();
             }
 
@@ -358,11 +358,11 @@ public class MultipleCrafter extends Block {
         @Override
         public void drawSelect() {
             super.drawSelect();
-            if(outputLiquids != null){
-                for(int i = 0; i < outputLiquids.length; i++){
+            if (outputLiquids != null) {
+                for (int i = 0; i < outputLiquids.length; i++) {
                     int dir = formula.liquidOutputDirections.length > i ? formula.liquidOutputDirections[i] : -1;
 
-                    if(dir != -1){
+                    if (dir != -1) {
                         Draw.rect(
                                 outputLiquids[i].liquid.fullIcon,
                                 x + Geometry.d4x(dir + rotation) * (size * tilesize / 2f + 4),
@@ -375,16 +375,16 @@ public class MultipleCrafter extends Block {
         }
 
         @Override
-        public float getProgressIncrease(float baseTime){
-            if(ignoreLiquidFullness){
+        public float getProgressIncrease(float baseTime) {
+            if (ignoreLiquidFullness) {
                 return super.getProgressIncrease(baseTime);
             }
 
             //limit progress increase by maximum amount of liquid it can produce
             float scaling = 1f, max = 1f;
-            if(outputLiquids != null){
+            if (outputLiquids != null) {
                 max = 0f;
-                for(var s : outputLiquids){
+                for (var s : outputLiquids) {
                     float value = (liquidCapacity - liquids.get(s.liquid)) / (s.amount * edelta());
                     scaling = Math.min(scaling, value);
                     max = Math.max(max, value);
@@ -400,47 +400,47 @@ public class MultipleCrafter extends Block {
             return powerProductionTimer > 0f ? formula.powerProduction * efficiency : 0f;
         }
 
-        public float warmupTarget(){
+        public float warmupTarget() {
             return 1f;
         }
 
         @Override
-        public float warmup(){
+        public float warmup() {
             return warmup;
         }
 
         @Override
-        public float totalProgress(){
+        public float totalProgress() {
             return totalProgress;
         }
 
-        public void craft(){
+        public void craft() {
             formulas.trigger(this);
 
-            if(outputItems != null){
-                for(var output : outputItems){
-                    for(int i = 0; i < output.amount; i++){
+            if (outputItems != null) {
+                for (var output : outputItems) {
+                    for (int i = 0; i < output.amount; i++) {
                         offload(output.item);
                     }
                 }
             }
 
-            if(wasVisible){
+            if (wasVisible) {
                 formula.craftEffect.at(x, y);
             }
             progress %= 1f;
             powerProductionTimer += formula.craftTime / efficiency + 1f;
         }
 
-        public void dumpOutputs(){
-            if(outputItems != null && timer(timerDump, dumpTime / timeScale)){
-                for(ItemStack output : outputItems){
+        public void dumpOutputs() {
+            if (outputItems != null && timer(timerDump, dumpTime / timeScale)) {
+                for (ItemStack output : outputItems) {
                     dump(output.item);
                 }
             }
 
-            if(outputLiquids != null){
-                for(int i = 0; i < outputLiquids.length; i++){
+            if (outputLiquids != null) {
+                for (int i = 0; i < outputLiquids.length; i++) {
                     int dir = formula.liquidOutputDirections.length > i ? formula.liquidOutputDirections[i] : -1;
 
                     dumpLiquid(outputLiquids[i].liquid, 2f, dir);
@@ -453,44 +453,45 @@ public class MultipleCrafter extends Block {
             super.buildConfiguration(table);
             table.pane(t -> {
                 ButtonGroup<Button> group = new ButtonGroup<>();
-                for(int i = 0; i < formulas.size(); i++){
+                for (int i = 0; i < formulas.size(); i++) {
                     int finalI = i;
-                    var b = t.button(finalI+"", Styles.squareTogglet, ()->{
-                        group.setChecked(finalI+"");
+                    var b = t.button(finalI + "", Styles.squareTogglet, () -> {
+                        group.setChecked(finalI + "");
                         configure(finalI);
                     }).size(45f).get();
                     group.add(b);
                 }
-                group.setChecked(formulaIndex+"");
+                group.setChecked(formulaIndex + "");
             });
         }
 
         @Override
-        public double sense(LAccess sensor){
-            if(sensor == LAccess.progress) return progress();
+        public double sense(LAccess sensor) {
+            if (sensor == LAccess.progress) return progress();
             return super.sense(sensor);
         }
 
         @Override
-        public float progress(){
+        public float progress() {
             return Mathf.clamp(progress);
         }
 
         @Override
-        public int getMaximumAccepted(Item item){
+        public int getMaximumAccepted(Item item) {
             return itemCapacity;
         }
 
         @Override
-        public boolean shouldAmbientSound(){
+        public boolean shouldAmbientSound() {
             return efficiency > 0;
         }
-        public void setIndex(int index){
+
+        public void setIndex(int index) {
             formulaIndex = index;
         }
 
         @Override
-        public void write(Writes write){
+        public void write(Writes write) {
             super.write(write);
             write.f(progress);
             write.f(warmup);
@@ -498,7 +499,7 @@ public class MultipleCrafter extends Block {
         }
 
         @Override
-        public void read(Reads read, byte revision){
+        public void read(Reads read, byte revision) {
             super.read(read, revision);
             progress = read.f();
             warmup = read.f();

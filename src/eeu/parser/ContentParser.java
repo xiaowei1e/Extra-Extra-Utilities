@@ -100,11 +100,13 @@ public class ContentParser {
     ObjectMap<Class<?>, ContentType> contentTypes = new ObjectMap<>();
     ObjectSet<Class<?>> implicitNullable = ObjectSet.with(TextureRegion.class, TextureRegion[].class, TextureRegion[][].class, TextureRegion[][][].class);
     ObjectMap<String, AssetDescriptor<?>> sounds = new ObjectMap<>();
+    Seq<ParseListener> listeners = new Seq<>();
     ObjectMap<Class<?>, FieldParser> classParsers = new ObjectMap<>() {{
         put(Effect.class, (type, data) -> {
             if (data.isString()) {
                 Object e = field(Fx.class, data);
                 if (e == null) e = field(EUFx.class, data);
+                return e;
             }
             if (data.isArray()) {
                 return new MultiEffect(parser.readValue(Effect[].class, data));
@@ -401,7 +403,6 @@ public class ContentParser {
             return formula;
         });
     }};
-    Seq<ParseListener> listeners = new Seq<>();
     LoadedMod currentMod;
     Content currentContent;
 
@@ -448,6 +449,46 @@ public class ContentParser {
         }
         if (c == null) throw new IllegalArgumentException("No " + type + " found with name '" + name + "'");
         return (T) c;
+    }
+
+    private <T extends Content> TypeParser<T> parser(ContentType type, Func<String, T> constructor) {
+        return (mod, name, value) -> {
+            T item;
+            if (locate(type, name) != null) {
+                item = (T) locate(type, name);
+                readBundle(type, name, value);
+            } else {
+                readBundle(type, name, value);
+                item = constructor.get(mod + "-" + name);
+            }
+            currentContent = item;
+            read(() -> readFields(item, value));
+            return item;
+        };
+    }
+
+    private void readBundle(ContentType type, String name, JsonValue value) {
+        UnlockableContent cont = locate(type, name) instanceof UnlockableContent ? locate(type, name) : null;
+
+        String entryName = cont == null ? type + "." + currentMod.name + "-" + name + "." : type + "." + cont.name + ".";
+        I18NBundle bundle = Core.bundle;
+        while (bundle.getParent() != null) bundle = bundle.getParent();
+
+        if (value.has("name")) {
+            if (!Core.bundle.has(entryName + "name")) {
+                bundle.getProperties().put(entryName + "name", value.getString("name"));
+                if (cont != null) cont.localizedName = value.getString("name");
+            }
+            value.remove("name");
+        }
+
+        if (value.has("description")) {
+            if (!Core.bundle.has(entryName + "description")) {
+                bundle.getProperties().put(entryName + "description", value.getString("description"));
+                if (cont != null) cont.description = value.getString("description");
+            }
+            value.remove("description");
+        }
     }
 
     private final Json parser = new Json() {
@@ -542,43 +583,47 @@ public class ContentParser {
         }
     };
 
-    private <T extends Content> TypeParser<T> parser(ContentType type, Func<String, T> constructor) {
-        return (mod, name, value) -> {
-            T item;
-            if (locate(type, name) != null) {
-                item = (T) locate(type, name);
-                readBundle(type, name, value);
-            } else {
-                readBundle(type, name, value);
-                item = constructor.get(mod + "-" + name);
+    /**
+     * Call to read a content's extra info later.
+     */
+    private void read(Runnable run) {
+        Content cont = currentContent;
+        LoadedMod mod = currentMod;
+        reads.add(() -> {
+            this.currentMod = mod;
+            this.currentContent = cont;
+            run.run();
+
+            //check nulls after parsing
+            if (cont != null) {
+                toBeParsed.remove(cont);
+                checkNullFields(cont);
             }
-            currentContent = item;
-            read(() -> readFields(item, value));
-            return item;
-        };
+        });
     }
 
-    private void readBundle(ContentType type, String name, JsonValue value) {
-        UnlockableContent cont = locate(type, name) instanceof UnlockableContent ? locate(type, name) : null;
+    private void init() {
+        for (ContentType type : ContentType.all) {
+            Seq<Content> arr = Vars.content.getBy(type);
+            if (!arr.isEmpty()) {
+                Class<?> c = arr.first().getClass();
+                //get base content class, skipping intermediates
+                while (!(c.getSuperclass() == Content.class || c.getSuperclass() == UnlockableContent.class || Modifier.isAbstract(c.getSuperclass().getModifiers()))) {
+                    c = c.getSuperclass();
+                }
 
-        String entryName = cont == null ? type + "." + currentMod.name + "-" + name + "." : type + "." + cont.name + ".";
-        I18NBundle bundle = Core.bundle;
-        while (bundle.getParent() != null) bundle = bundle.getParent();
-
-        if (value.has("name")) {
-            if (!Core.bundle.has(entryName + "name")) {
-                bundle.getProperties().put(entryName + "name", value.getString("name"));
-                if (cont != null) cont.localizedName = value.getString("name");
+                contentTypes.put(c, type);
             }
-            value.remove("name");
         }
+    }
 
-        if (value.has("description")) {
-            if (!Core.bundle.has(entryName + "description")) {
-                bundle.getProperties().put(entryName + "description", value.getString("description"));
-                if (cont != null) cont.description = value.getString("description");
-            }
-            value.remove("description");
+    private void attempt(Runnable run) {
+        try {
+            run.run();
+        } catch (Throwable t) {
+            Log.err(t);
+            //don't overwrite double errors
+            markError(currentContent, t);
         }
     }
 
@@ -795,50 +840,6 @@ public class ContentParser {
                 return planet;
             }
     );
-
-    /**
-     * Call to read a content's extra info later.
-     */
-    private void read(Runnable run) {
-        Content cont = currentContent;
-        LoadedMod mod = currentMod;
-        reads.add(() -> {
-            this.currentMod = mod;
-            this.currentContent = cont;
-            run.run();
-
-            //check nulls after parsing
-            if (cont != null) {
-                toBeParsed.remove(cont);
-                checkNullFields(cont);
-            }
-        });
-    }
-
-    private void init() {
-        for (ContentType type : ContentType.all) {
-            Seq<Content> arr = Vars.content.getBy(type);
-            if (!arr.isEmpty()) {
-                Class<?> c = arr.first().getClass();
-                //get base content class, skipping intermediates
-                while (!(c.getSuperclass() == Content.class || c.getSuperclass() == UnlockableContent.class || Modifier.isAbstract(c.getSuperclass().getModifiers()))) {
-                    c = c.getSuperclass();
-                }
-
-                contentTypes.put(c, type);
-            }
-        }
-    }
-
-    private void attempt(Runnable run) {
-        try {
-            run.run();
-        } catch (Throwable t) {
-            Log.err(t);
-            //don't overwrite double errors
-            markError(currentContent, t);
-        }
-    }
 
     public void finishParsing() {
         reads.each(this::attempt);

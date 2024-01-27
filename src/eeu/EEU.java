@@ -20,6 +20,10 @@ public class EEU {
         main = (EEUMod) mod.main;
     }
 
+    public static Fi getInternalFile(String path) {
+        return Vars.mods.getMod(EEUMod.class).root.child(path);
+    }
+
     public void load() {
         EEUContentLoader.load();
         EEUTechTree.load();
@@ -34,9 +38,5 @@ public class EEU {
             String text = "注意,您当前使用的EU版本与此版本拓展开发所依赖的版本并不匹配(应为%s,但实际为%s),这可能会导致未知的错误.";
             Vars.ui.showInfoText("EU版本不匹配", String.format(text, EEUMod.euVersion, main.getEUVersion()));
         }
-    }
-
-    public static Fi getInternalFile(String path) {
-        return Vars.mods.getMod(EEUMod.class).root.child(path);
     }
 }

@@ -32,6 +32,7 @@ import ExtraUtilities.worlds.entity.weapon.healConeWeapon;
 import arc.struct.ObjectMap;
 import eeu.world.blocks.crafter.MultipleCrafter;
 import eeu.world.blocks.defense.CrispWall;
+import eeu.world.blocks.power.RotatableBeamNode;
 import mindustry.mod.ClassMap;
 
 public class Classes {
@@ -119,5 +120,6 @@ public class Classes {
         classes.put("healConeWeapon", healConeWeapon.class);
         classes.put("CrispWall", CrispWall.class);
         classes.put("MultipleCrafter", MultipleCrafter.class);
+        classes.put("RotatableBeamNode", RotatableBeamNode.class);
     }
 }

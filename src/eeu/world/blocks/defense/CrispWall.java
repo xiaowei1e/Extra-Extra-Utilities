@@ -14,10 +14,12 @@ public class CrispWall extends Wall {
     public float maxHandleDamage = 100;
     public float restoreSpeed = 0.1f;
     public float damageMultiple = 0.2f;
+
     public CrispWall(String name) {
         super(name);
         update = true;
     }
+
     @Override
     public void setBars() {
         super.setBars();
@@ -26,6 +28,7 @@ public class CrispWall extends Wall {
             return new MultipleBar(() -> Core.bundle.get("stat.health"), () -> new Color[]{Pal.health, Pal.shield}, new Floatp[]{b::healthf, () -> 1 - cb.damaged / maxHandleDamage}).blink(Color.white);
         });
     }
+
     @Override
     public void setStats() {
         super.setStats();
@@ -35,6 +38,7 @@ public class CrispWall extends Wall {
 
     public class CrispWallBuilding extends WallBuild {
         public float damaged = 0;
+
         @Override
         public void updateTile() {
             super.updateTile();
@@ -42,6 +46,7 @@ public class CrispWall extends Wall {
                 damaged = Mathf.maxZero(damaged - restoreSpeed);
             }
         }
+
         @Override
         public float handleDamage(float amount) {
             damaged += amount * (1 - damageMultiple);

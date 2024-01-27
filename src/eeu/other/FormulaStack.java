@@ -7,51 +7,62 @@ import mindustry.world.Block;
 public class FormulaStack {
     private Seq<Formula> formulas;
 
-    public Seq<Formula> getFormulas() {
-        return formulas;
-    }
-    public FormulaStack(){
+    public FormulaStack() {
         formulas = new Seq<>();
     }
-    public FormulaStack(Seq<Formula> formulas){
+
+    public FormulaStack(Seq<Formula> formulas) {
         this.formulas = formulas;
+    }
+
+    public static FormulaStack with(Formula... formulas) {
+        return new FormulaStack(new Seq<>(formulas));
+    }
+
+    public Seq<Formula> getFormulas() {
+        return formulas;
     }
 
     public void setFormulas(Seq<Formula> formulas) {
         this.formulas = formulas;
     }
-    public Formula getFormula(int index){
+
+    public Formula getFormula(int index) {
         return formulas.get(index);
     }
-    public void setFormula(int index, Formula formula){
+
+    public void setFormula(int index, Formula formula) {
         formulas.set(index, formula);
     }
-    public void addFormula(Formula formula){
+
+    public void addFormula(Formula formula) {
         formulas.add(formula);
     }
-    public boolean outputItems(int index){
+
+    public boolean outputItems(int index) {
         return getFormula(index).getOutputItems() != null;
     }
-    public boolean outputItems(){
-        for(var f : formulas){
+
+    public boolean outputItems() {
+        for (var f : formulas) {
             if (f.getOutputItems() != null) return true;
         }
         return false;
     }
-    public void trigger(Building build){
-        for(var f : formulas){
+
+    public void trigger(Building build) {
+        for (var f : formulas) {
             f.trigger(build);
         }
     }
-    public void apply(Block block){
-        for(var f : formulas){
+
+    public void apply(Block block) {
+        for (var f : formulas) {
             f.apply(block);
         }
     }
-    public int size(){
+
+    public int size() {
         return formulas.size;
-    }
-    public static FormulaStack with(Formula... formulas){
-        return new FormulaStack(new Seq<>(formulas));
     }
 }
