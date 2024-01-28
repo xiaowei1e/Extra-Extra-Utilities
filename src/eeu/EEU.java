@@ -6,6 +6,7 @@ import eeu.content.EEUShaders;
 import eeu.content.EEUTechTree;
 import eeu.override.DrawOverride;
 import eeu.override.UIOverride;
+import eeu.ui.EEUStyles;
 import mindustry.Vars;
 import mindustry.mod.Mods;
 
@@ -33,6 +34,7 @@ public class EEU {
     }
 
     public void loadAfter() {
+        EEUStyles.load();
         ui = new UIOverride();
         if (!main.checkEUVersion(EEUMod.euVersion)) {
             String text = "注意,您当前使用的EU版本与此版本拓展开发所依赖的版本并不匹配(应为%s,但实际为%s),这可能会导致未知的错误.";

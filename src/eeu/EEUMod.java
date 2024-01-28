@@ -35,7 +35,7 @@ public class EEUMod extends Mod {
         mod.meta.description = """
                 本mod为更多实用设备(EU)附属mod
                 同时,本mod是更多实用设备扩展(EUE)经过重置后的mod,即本mod前身为EUE
-                当然,尽管如此,更多实用设备扩展(EUE)中的内容只有极少优的质部分会被重置并添加到本mod
+                当然,尽管如此,更多实用设备扩展(EUE)中的内容只有极少优质的部分会被重置并添加到本mod
                 本mod可能会稍微影响平衡但不会破坏平衡
                 计划丰富EU内容,按照EU的风格对原版内容进行拓展,使游戏更有趣以及更加的人性化
                 模组方向:

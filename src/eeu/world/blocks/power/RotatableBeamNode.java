@@ -14,22 +14,28 @@ import arc.math.geom.Rect;
 import arc.math.geom.Vec2;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
+import arc.util.Align;
 import arc.util.Eachable;
+import arc.util.Nullable;
 import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import eeu.ui.tables.RotationButton;
+import mindustry.Vars;
+import mindustry.content.UnitTypes;
 import mindustry.core.Renderer;
 import mindustry.core.World;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
+import mindustry.gen.BlockUnitc;
 import mindustry.gen.Building;
-import mindustry.gen.Tex;
+import mindustry.gen.Unit;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
 import mindustry.input.Placement;
 import mindustry.world.Tile;
+import mindustry.world.blocks.ControlBlock;
 import mindustry.world.blocks.power.BeamNode;
 import mindustry.world.blocks.power.PowerGraph;
 import mindustry.world.meta.BlockStatus;
@@ -103,7 +109,7 @@ public class RotatableBeamNode extends BeamNode {
         Placement.calculateNodes(points, this, rotation, (point, other) -> Mathf.within(point.x, point.y, other.x, other.y, range));
     }
 
-    public class RotatableBeamNodeBuild extends Building {
+    public class RotatableBeamNodeBuild extends Building implements ControlBlock {
         public int lastChange = -2;
         public Building toLink = null;
         public Tile toDest = null;
@@ -111,6 +117,21 @@ public class RotatableBeamNode extends BeamNode {
         public float ang = 0;
         public RotationButton rotationButton = new RotationButton();
         private int dPos = -1;
+        public @Nullable BlockUnitc unit;
+
+        @Override
+        public Unit unit() {
+            if (unit == null) {
+                unit = (BlockUnitc) UnitTypes.block.create(team);
+                unit.tile(this);
+            }
+            return (Unit) unit;
+        }
+
+        @Override
+        public boolean shouldAutoTarget() {
+            return false;
+        }
 
         @Override
         public void updateTile() {
@@ -118,6 +139,12 @@ public class RotatableBeamNode extends BeamNode {
             if (lastChange != world.tileChanges) {
                 lastChange = world.tileChanges;
                 updateLine();
+            }
+            if (unit != null && isControlled()) {
+                unit.health(health);
+                unit.team(team);
+                unit.set(x, y);
+                configure(Angles.angle(unit.aimX() - x, unit.aimY() - y) - rotation() * 90f);
             }
             rotation = Angles.moveToward(rotation, ang, rotateSpeed);
         }
@@ -129,13 +156,12 @@ public class RotatableBeamNode extends BeamNode {
             build.ang = ang;
             build.rotation = ang;
             build.rotationButton.setAngle(ang);
-            build.rotationButton.background(Tex.pane);
             return build;
         }
 
         @Override
         public Object config() {
-            return ang - rotation() * 90;
+            return ang - rotation() * 90f;
         }
 
         @Override
@@ -145,6 +171,14 @@ public class RotatableBeamNode extends BeamNode {
                     configure(b.angle - rotation() * 90);
                 }
             });
+        }
+
+        @Override
+        public void updateTableAlign(Table table) {
+            Vec2 pos = Core.input.mouseScreen(this.x, this.y);
+            rotationButton.setSize(block.size * tilesize * 2f * Vars.renderer.getDisplayScale());
+            table.setPosition(pos.x, pos.y, Align.center);
+            rotationButton.setPosition(table.getWidth() / 2f, table.getHeight() / 2f, Align.center);
         }
 
         @Override
