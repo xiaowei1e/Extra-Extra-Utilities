@@ -288,7 +288,7 @@ public class RotatableBeamNode extends BeamNode {
         public void write(Writes write) {
             super.write(write);
             write.f(rotation);
-            write.f(ang);
+            write.f(rotationButton.getAngle());
             write.bool(toDest == null);
             write.i(toDest == null ? 0 : toDest.pos());
         }
@@ -297,8 +297,7 @@ public class RotatableBeamNode extends BeamNode {
         public void read(Reads read, byte revision) {
             super.read(read, revision);
             rotation = read.f();
-            rotationButton.setAngle(read.f());
-            ang = rotationButton.getAngle();
+            configure(read.f() - rotation() * 90f);
             boolean bool = read.bool();
             int pos = read.i();
             if (!bool) {

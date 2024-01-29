@@ -67,7 +67,7 @@ public class RotationButton extends Table {
     }
 
     public void setAngle(float angle) {
-        if (Math.abs(angle * 2f - Mathf.floor(angle / 45f) * (45f * 2f) - 45f) < 45f - 1f / getCircleSize() * 16f * Mathf.radDeg) {
+        if (Math.abs(angle * 2f - Mathf.floor(angle / 45f) * (45f * 2f) - 45f) < 45f - 1f) {
             this.angle = angle;
         } else {
             this.angle = Mathf.round(angle / 45f) * 45f;
