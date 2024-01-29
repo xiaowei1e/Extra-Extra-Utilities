@@ -36,7 +36,6 @@ public class EEUBlocks {
             health = 100;
             range = 10;
             fogRadius = 1;
-
             consumePowerBuffered(1000f);
         }};
         /*polarZone = new PowerTurret("polar-zone") {{

@@ -59,8 +59,8 @@ public class RotatableBeamNode extends BeamNode {
         drawArrow = true;
         config(Float.class, (e, v) -> {
             if (e instanceof RotatableBeamNodeBuild b) {
-                b.ang = b.rotation() * 90 + v;
-                b.rotationButton.angle = b.ang;
+                b.rotationButton.setAngle(b.rotation() * 90 + v);
+                b.ang = b.rotationButton.getAngle();
             }
         });
     }
@@ -167,8 +167,8 @@ public class RotatableBeamNode extends BeamNode {
         @Override
         public void buildConfiguration(Table table) {
             table.add(rotationButton).size(100f).update(b -> {
-                if (ang != b.angle) {
-                    configure(b.angle - rotation() * 90);
+                if (ang != b.getAngle()) {
+                    configure(b.getAngle() - rotation() * 90);
                 }
             });
         }
@@ -288,6 +288,7 @@ public class RotatableBeamNode extends BeamNode {
         public void write(Writes write) {
             super.write(write);
             write.f(rotation);
+            write.f(ang);
             write.bool(toDest == null);
             write.i(toDest == null ? 0 : toDest.pos());
         }
@@ -295,9 +296,9 @@ public class RotatableBeamNode extends BeamNode {
         @Override
         public void read(Reads read, byte revision) {
             super.read(read, revision);
+            rotation = read.f();
             rotationButton.setAngle(read.f());
-            rotation = rotationButton.angle;
-            ang = rotation;
+            ang = rotationButton.getAngle();
             boolean bool = read.bool();
             int pos = read.i();
             if (!bool) {

@@ -34,7 +34,7 @@ public class ExtraBreaker extends Block {
         update = destructible = true;
         rebuildable = false;
         configurable = true;
-        config(float.class, (ExtraBreakerBuild build, Float config) -> build.rotTable.angle = config);
+        config(float.class, (ExtraBreakerBuild build, Float config) -> build.rotTable.setAngle(config));
         config(Boolean.class, (ExtraBreakerBuild build, Boolean config) -> build.isBegin = config);
     }
 
@@ -93,7 +93,7 @@ public class ExtraBreaker extends Block {
         @Override
         public void buildConfiguration(Table table) {
             table.add(rotTable).size(100f).update(b -> {
-                configure(b.angle);
+                configure(b.getAngle());
             }).row();
             table.button(Icon.up, () -> {
                 isBegin = true;
@@ -128,7 +128,7 @@ public class ExtraBreaker extends Block {
                 tiles.each(Tile::remove);
                 kill();
             }
-            rot = Angles.moveToward(rot, rotTable.angle, 1f);
+            rot = Angles.moveToward(rot, rotTable.getAngle(), 1f);
         }
 
         @Override
@@ -147,7 +147,7 @@ public class ExtraBreaker extends Block {
             write.f(rot);
             write.bool(isBegin);
             write.f(angle);
-            write.f(rotTable.angle);
+            write.f(rotTable.getAngle());
         }
 
         @Override

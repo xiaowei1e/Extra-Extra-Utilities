@@ -5,6 +5,7 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.input.KeyCode;
+import arc.math.Angles;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
 import arc.scene.event.InputEvent;
@@ -12,19 +13,16 @@ import arc.scene.event.InputListener;
 import arc.scene.event.Touchable;
 import arc.scene.style.Style;
 import arc.scene.ui.layout.Table;
-import arc.util.Tmp;
 import eeu.ui.EEUStyles;
-import mindustry.graphics.Pal;
+import mindustry.Vars;
+import mindustry.graphics.Drawf;
 
 public class RotationButton extends Table {
-    public Color circleColor = Pal.accentBack;
-    public Color pointColor = Pal.accent;
-    public float pointLength = 20;
-    public float angle = 0f;
+    private float angle = 0f;
     public boolean isTouched = false;
     public Vec2 center = new Vec2();
     public Vec2 touchPoint = new Vec2();
-    private RotationButtonStyle style;
+    public RotationButtonStyle style;
 
     public RotationButton() {
         this(EEUStyles.defaultrb);
@@ -56,11 +54,6 @@ public class RotationButton extends Table {
             }
         });
     }
-
-    public void setCenter(Vec2 v) {
-        setCenter(v.x, v.y);
-    }
-
     public void setCenter(float x, float y) {
         this.center.set(x, y);
     }
@@ -69,8 +62,16 @@ public class RotationButton extends Table {
         touchPoint.set(x, y).sub(center);
     }
 
+    public float getAngle() {
+        return angle;
+    }
+
     public void setAngle(float angle) {
-        this.angle = angle;
+        if (Math.abs(angle * 2f - Mathf.floor(angle / 45f) * (45f * 2f) - 45f) < 45f - 1f / getCircleSize() * 16f * Mathf.radDeg) {
+            this.angle = angle;
+        } else {
+            this.angle = Mathf.round(angle / 45f) * 45f;
+        }
     }
 
     public float getCircleSize() {
@@ -78,54 +79,59 @@ public class RotationButton extends Table {
     }
 
     public boolean checkValid(float x, float y) {
-        return Mathf.within(x - center.x, y - center.y, getCircleSize());
-    }
-
-    public Table setCircleColor(Color color) {
-        circleColor = color;
-        return this;
-    }
-
-    public Table setPointColor(Color color) {
-        pointColor = color;
-        return this;
+        return Mathf.within(x - center.x, y - center.y, getCircleSize() / 2f);
     }
 
     @Override
     public void layout() {
         super.layout();
     }
-
-    public RotationButtonStyle getStyle() {
-        return style;
-    }
-
     @Override
     public void draw() {
         super.draw();
         setCenter(x + width / 2f, y + height / 2f);
-        Draw.color(style.backgroundColor);
-        Fill.circle(center.x, center.y, getCircleSize() / 2f);
-        Draw.color(style.ringColor);
-        Lines.stroke(style.ringStroke);
-        Lines.circle(center.x, center.y, getCircleSize() / 2f + style.ringStroke / 2f);
-        Draw.color(circleColor);
-        //Fill.circle(touchPoint.x + center.x, touchPoint.y + center.y, 8);
-        //Lines.circle(center.x, center.y, getCircleSize() / 2);
-        Vec2 v1 = Tmp.v1.trns(angle, (getCircleSize() + pointLength) / 2f);
-        Draw.color(pointColor);
-        Lines.stroke(isTouched ? 5 : 3);
-        Lines.line(v1.x + center.x, v1.y + center.y, center.x, center.y);
+        drawDial();
+        drawPointer();
+        style.drawTop(center.x, center.y, getCircleSize());
+    }
+
+    public void drawDial() {
+        style.drawDial(center.x, center.y, getCircleSize());
+    }
+
+    public void drawPointer() {
+        style.drawPointer(center.x, center.y, getCircleSize(), angle);
     }
 
     public static class RotationButtonStyle extends Style {
-        public Color ringColor, backgroundColor;
-        public float ringStroke;
+        public Color ringColor, backgroundColor, pointerColor;
+        public float ringStroke = 0.5f, pointerWidth = 1f;
 
-        public RotationButtonStyle(Color ring, Color background, float stroke) {
+        public RotationButtonStyle(Color ring, Color background, Color pointer) {
             ringColor = ring;
             backgroundColor = background;
-            ringStroke = stroke;
+            pointerColor = pointer;
+        }
+
+        public void drawDial(float x, float y, float size) {
+            Draw.color(backgroundColor);
+            Fill.circle(x, y, size / 2f);
+            Lines.stroke(ringStroke * Vars.renderer.getDisplayScale(), ringColor);
+            Lines.circle(x, y, size / 2f + ringStroke / 2f);
+        }
+
+        public void drawPointer(float x, float y, float size, float angle) {
+            Draw.color(pointerColor);
+            Drawf.tri(x, y, pointerWidth * Vars.renderer.getDisplayScale(), size, angle);
+            Drawf.tri(x, y, pointerWidth * Vars.renderer.getDisplayScale(), size * 0.1f, 180f + angle);
+        }
+
+        public void drawTop(float x, float y, float size) {
+            Draw.color(ringColor);
+            for (int i = 0; i < 360; i += 45) {
+                Drawf.tri(x + Angles.trnsx(i, size / 2f), y + Angles.trnsy(i, size / 2f), pointerWidth * Vars.renderer.getDisplayScale(), size * 0.1f, 180f + i);
+                Drawf.tri(x + Angles.trnsx(i, size / 2f), y + Angles.trnsy(i, size / 2f), pointerWidth * Vars.renderer.getDisplayScale(), size * 0.1f, i);
+            }
         }
     }
 }
