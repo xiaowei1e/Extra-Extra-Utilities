@@ -1,28 +1,32 @@
 package eeu.content;
 
 import ExtraUtilities.content.EUItems;
+import eeu.other.bullet.PointLightningBulletType;
 import eeu.world.blocks.defense.CrispWall;
 import eeu.world.blocks.power.RotatableBeamNode;
 import mindustry.content.Items;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
+import mindustry.world.blocks.defense.turrets.PowerTurret;
 import mindustry.world.meta.Env;
 
 import static mindustry.type.ItemStack.with;
 
 public class EEUBlocks {
-    public static Block crispWallLarge, rotatableBeamNode;
+    public static Block crispWall, crispWallLarge,
+            rotatableBeamNode,
+            testTurret;
 
     public static void load() {
         int wallHealthMultiplier = 4;
-        /*crispWall = new CrispWall("crisp-steel-wall") {{
+        crispWall = new CrispWall("crisp-steel-wall") {{
             requirements(Category.defense, ItemStack.with(EUItems.crispSteel, 6));
             health = 120 * wallHealthMultiplier;
             maxHandleDamage = health * 0.8f;
             restoreSpeed = maxHandleDamage * 0.1f / 60f;
             envDisabled |= Env.scorching;
-        }};*/
+        }};
         crispWallLarge = new CrispWall("crisp-steel-wall-large") {{
             requirements(Category.defense, ItemStack.with(EUItems.crispSteel, 24));
             size = 2;
@@ -38,6 +42,15 @@ public class EEUBlocks {
             fogRadius = 1;
             consumePowerBuffered(1000f);
         }};
+        testTurret = new PowerTurret("test-turret") {{
+            requirements(Category.turret, with());
+            shootType = new PointLightningBulletType() {{
+                speed = 160f;
+            }};
+            reload = 60f;
+            range = 160;
+        }};
+
         /*polarZone = new PowerTurret("polar-zone") {{
 
         }};*/
